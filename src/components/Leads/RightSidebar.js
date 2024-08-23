@@ -16,9 +16,10 @@ const RightSidebar = ({ isOpen, onClose, selectedLead }) => {
   const [templateBody, setTemplateBody] = useState(''); // New state for template body
 
   const templates = {
-    'Template 1': 'Hello, this is a reminder for your demo scheduled tomorrow.',
-    'Template 2': 'Thank you for your interest. Let us know if you have any further questions!',
-    'Template 3': 'Congratulations! Your demo has been successfully completed.',
+    'Details Shared': 'Thank you for your interest. Let us know if you have any further questions!',
+    'Demo Sheduled': 'Hello, this is a reminder for your demo scheduled tomorrow.',
+    
+    'Demo Done': 'Congratulations! Your demo has been successfully completed.',
   };
 
   useEffect(() => {

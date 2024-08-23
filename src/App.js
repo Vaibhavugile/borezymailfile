@@ -14,6 +14,7 @@ import CreateSuperAdmin from './components/Profile/CreateSuperAdmin';
 import Profile from './components/Profile/Profile';
 import Layout from './components/Profile/Layout';
 import Lead from './components/./Leads/Addlead';
+import EditLead from './components/Leads/EditLead';
 import { UserProvider } from './components/Auth/UserContext';
 import DetailsShared from './components/Leads/Leads';
 import DemoScheduled from './components/Leads/Leads';
@@ -38,6 +39,7 @@ const App = () => (
       <Route path="/customize" element={<Customize />} />
       <Route path="/active-log" element={<ActiveLog />} />
       <Route path="/create-lead" element={<Lead />} />
+      <Route path="/edit-lead/:id" element={<EditLead />} />
       <Route path="/leads/detail-shared" element={<DetailsShared />} />
       <Route path="/leads/demo-scheduled" element={<DemoScheduled />} />
       <Route path="/leads/demo-done" element={<DemoDone />} />
