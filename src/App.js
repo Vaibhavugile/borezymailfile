@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './components/Auth/Login';
 import ChangePassword from './components/Auth/ChangePassword';
 import AdminDashboard from './components/Admin/AdminDashboard';
-import Welcome from './components/Welcome';
+import Welcome from './components/UserDashboard/UserDashboard';
 import CreateBranch from './components/Branch/CreateBranch';
 import EditBranch from './components/Branch/EditBranch';
 import ActiveLog from './components/Log/ActiveLog';
@@ -21,6 +21,7 @@ import DemoScheduled from './components/Leads/Leads';
 import DemoDone from './components/Leads/Leads';
 import LeadWon from './components/Leads/Leads';
 import LeadLost from './components/Leads/Leads';
+import User from './components/UserDashboard/User';
 
 const App = () => (
   <UserProvider>
@@ -49,6 +50,7 @@ const App = () => (
       <Route path="/" element={<Layout />}>
       <Route path="superadmin" element={<CreateSuperAdmin />} /> {/* Route for the LeadForm */}
       <Route path="profile" element={<Profile />} />
+      <Route path="/user" element={<User />} />
     </Route>
     </Routes>
   </Router>

@@ -145,7 +145,7 @@ const AdminDashboard = () => {
             />
           </label>
           <div className="create-branch-container">
-           <button onClick={() => navigate('/create-lead')}>Add Lead</button>
+           <button onClick={() => navigate('/create-branch')}>Create Branch</button>
           </div>
         </div>
         </div>
