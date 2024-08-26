@@ -112,7 +112,8 @@
 }
 
 .comment-section textarea {
-  width: 100%;
+  width: 500px;
+  max-width: 5%;
   height: 80px; /* Adjust height as needed */
   padding: 10px;
   border-radius: 8px;

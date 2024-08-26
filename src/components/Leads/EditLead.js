@@ -65,7 +65,7 @@ const EditLead = () => {
         const leadDoc = doc(db, 'leads', id);
         await updateDoc(leadDoc, formData);
         setSuccess('Lead details updated successfully.');
-        navigate('/leads-dashboard');
+        navigate('/leads');
       } catch (error) {
         setError('Failed to update lead details. Please try again.');
       }

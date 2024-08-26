@@ -22,6 +22,7 @@ import DemoDone from './components/Leads/Leads';
 import LeadWon from './components/Leads/Leads';
 import LeadLost from './components/Leads/Leads';
 import User from './components/UserDashboard/User';
+import FreshLeads from './components/Leads/Leads';
 
 const App = () => (
   <UserProvider>
@@ -42,6 +43,7 @@ const App = () => (
       <Route path="/create-lead" element={<Lead />} />
       <Route path="/edit-lead/:id" element={<EditLead />} />
       <Route path="/leads/detail-shared" element={<DetailsShared />} />
+      <Route path="/leads/fresh-leads" element={<FreshLeads/>}/>
       <Route path="/leads/demo-scheduled" element={<DemoScheduled />} />
       <Route path="/leads/demo-done" element={<DemoDone />} />
       <Route path="/leads/lead-won" element={<LeadWon />} />

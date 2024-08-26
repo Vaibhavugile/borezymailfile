@@ -62,6 +62,13 @@ const Leads = () => {
       else if (status === 'detail-shared') {
         filtered = filtered.filter(lead => lead.status.toLowerCase() === 'details shared');
       }
+      else if (status === 'fresh-leads') {
+        const currentDate = new Date();
+        filtered = filtered.filter(lead => {
+          const followupDate = new Date(lead.nextFollowup);
+          return lead.status.toLowerCase() === 'fresh leads' && followupDate > currentDate;
+        });
+      }
 
       else if (status === 'demo-done') {
         filtered = filtered.filter(lead => lead.status.toLowerCase() === 'demo done');
