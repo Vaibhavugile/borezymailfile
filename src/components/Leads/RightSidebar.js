@@ -12,13 +12,12 @@ const RightSidebar = ({ isOpen, onClose, selectedLead }) => {
   const [comments, setComments] = useState([]);
   const [response, setResponse] = useState('');
   const [isOverlayOpen, setIsOverlayOpen] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState(''); // New state for selected template
-  const [templateBody, setTemplateBody] = useState(''); // New state for template body
+  const [selectedTemplate, setSelectedTemplate] = useState('');
+  const [templateBody, setTemplateBody] = useState('');
 
   const templates = {
     'Details Shared': 'Thank you for your interest. Let us know if you have any further questions!',
-    'Demo Sheduled': 'Hello, this is a reminder for your demo scheduled tomorrow.',
-    
+    'Demo Scheduled': 'Hello, this is a reminder for your demo scheduled tomorrow.',
     'Demo Done': 'Congratulations! Your demo has been successfully completed.',
   };
 
@@ -36,16 +35,15 @@ const RightSidebar = ({ isOpen, onClose, selectedLead }) => {
 
     try {
       const leadRef = doc(db, 'leads', selectedLead.id);
-
       const currentDateTime = new Date().toLocaleString();
       const commentWithTimestamp = `${currentDateTime}: ${newComment}`;
 
       await updateDoc(leadRef, {
-        status: status,
-        nextFollowup: nextFollowup,
-        assignedTo: assignedTo,
+        status,
+        nextFollowup,
+        assignedTo,
         comments: arrayUnion(commentWithTimestamp),
-        response: response,
+        response,
       });
 
       alert('Lead updated successfully!');
@@ -54,22 +52,23 @@ const RightSidebar = ({ isOpen, onClose, selectedLead }) => {
       onClose();
     } catch (error) {
       console.error('Error updating lead: ', error);
+      alert('Failed to update lead. Please try again.');
     }
   };
 
   const handleTemplateSelect = (template) => {
     setSelectedTemplate(template);
-    setTemplateBody(templates[template] || ''); // Set the body of the selected template
+    setTemplateBody(templates[template] || '');
   };
 
   const handleTemplateBodyChange = (event) => {
-    setTemplateBody(event.target.value); // Update template body as it is edited
+    setTemplateBody(event.target.value);
   };
 
   const handleSendTemplate = () => {
     const whatsappLink = `https://api.whatsapp.com/send?phone=${selectedLead.contactNumber}&text=${encodeURIComponent(templateBody)}`;
     window.open(whatsappLink, '_blank');
-    setIsOverlayOpen(false); // Close the overlay after sending
+    setIsOverlayOpen(false);
   };
 
   const toggleOverlay = () => {

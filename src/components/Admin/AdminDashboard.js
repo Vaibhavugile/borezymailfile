@@ -14,12 +14,14 @@ import search from '../../assets/Search.png';
 
 const AdminDashboard = () => {
   const [branches, setBranches] = useState([]);
+  const [filteredBranches, setFilteredBranches] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchField, setSearchField] = useState('branchName'); // Default search by branch name
   const [activeFilter, setActiveFilter] = useState('all');
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [importedData, setImportedData] = useState(null); // For storing imported CSV data
-  
+
   const handleSidebarToggle = () => {
     setSidebarOpen(!sidebarOpen);
   };
@@ -37,6 +39,24 @@ const AdminDashboard = () => {
 
     fetchBranches();
   }, []);
+
+  useEffect(() => {
+    const applyFilter = () => {
+      let filtered = branches;
+      
+      if (searchQuery) {
+        filtered = filtered.filter(branch => {
+          const query = searchQuery.toLowerCase();
+          const fieldValue = branch[searchField]?.toString().toLowerCase();
+          return fieldValue?.includes(query);
+        });
+      }
+      
+      setFilteredBranches(filtered);
+    };
+
+    applyFilter();
+  }, [branches, searchQuery, searchField]);
 
   const handleDelete = async (id) => {
     try {
@@ -59,57 +79,35 @@ const AdminDashboard = () => {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
-  const applyFilter = (branches) => {
-    switch (activeFilter) {
-      case 'ongoing':
-        return branches.filter(branch => calculateRemainingDays(branch.deactiveDate) > 0);
-      case 'expiring':
-        return branches.filter(branch => calculateRemainingDays(branch.deactiveDate) > 0 && calculateRemainingDays(branch.deactiveDate) <= 5);
-      case 'expired':
-        return branches.filter(branch => calculateRemainingDays(branch.deactiveDate) <= 0);
-      case 'all':
-      default:
-        return branches;
+  const exportToCSV = () => {
+    const csv = Papa.unparse(filteredBranches);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'branches.csv');
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   };
 
-  const filteredBranches = applyFilter(branches).filter(branch => {
-    const lowerCaseQuery = searchQuery.toLowerCase();
-    return (
-      branch.branchCode.toLowerCase().includes(lowerCaseQuery) ||
-      branch.branchName.toLowerCase().includes(lowerCaseQuery) ||
-      branch.emailId.toLowerCase().includes(lowerCaseQuery) ||
-      branch.location.toLowerCase().includes(lowerCaseQuery) ||
-      branch.ownerName.toLowerCase().includes(lowerCaseQuery) ||
-      branch.subscriptionType.toLowerCase().includes(lowerCaseQuery) ||
-      branch.amount.toString().includes(lowerCaseQuery) ||
-      branch.numberOfUsers.toString().includes(lowerCaseQuery) ||
-      (calculateRemainingDays(branch.deactiveDate) > 0 ? 'active' : 'deactive').includes(lowerCaseQuery)
-    );
-  });
-
   const handleImport = (event) => {
     const file = event.target.files[0];
-    Papa.parse(file, {
-      header: true,
-      complete: (result) => {
-        console.log(result.data);
-        setImportedData(result.data); // Store imported data
-        // You can now process the data and push it to Firestore if needed
-      },
-    });
-  };
-
-  const handleExport = () => {
-    const csv = Papa.unparse(branches); // Convert branch data to CSV format
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', 'branches.csv');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    if (file) {
+      Papa.parse(file, {
+        header: true,
+        complete: (result) => {
+          const importedBranches = result.data.map((row) => ({
+            ...row,
+            deactiveDate: new Date(row.deactiveDate).toISOString(),
+          }));
+          setImportedData(importedBranches);
+        },
+      });
+    }
   };
 
   return (
@@ -117,118 +115,106 @@ const AdminDashboard = () => {
       <Sidebar isOpen={sidebarOpen} onToggle={handleSidebarToggle} />
       <div className="dashboard-content">
         <Header onMenuClick={handleSidebarToggle} isSidebarOpen={sidebarOpen} />
-      </div>
-      <div class="toolbar-container">
-        <div className="search-bar-container">
-          <img src={search} alt="search icon" className="search-icon" />
-          <input
-            type="text"
-            placeholder="Search leads..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <div className="action-buttons">
-          <button onClick={handleExport} className="action-button">
-            <img src={downloadIcon} alt="Export" className="icon" />
-            Export
-          </button>
-          <label htmlFor="import" className="action-button">
-            <img src={uploadIcon} alt="Import" className="icon" />
-            Import
+        <h2 style={{ marginLeft: '10px', marginTop: '100px' }}>All Branches ({filteredBranches.length})</h2>
+
+        <div className="toolbar-container">
+          <div className="search-bar-container">
+            <img src={search} alt="search icon" className="search-icon" />
+            <select
+              value={searchField}
+              onChange={(e) => setSearchField(e.target.value)}
+              className="search-dropdown"
+            >
+              <option value="branchName">Branch Name</option>
+              <option value="emailId">Email Id</option>
+              <option value="branchCode">Branch Code</option>
+              <option value="location">Location</option>
+              <option value="ownerName">Owner Name</option>
+              <option value="subscriptionType">Subscription Type</option>
+              <option value="numberOfUsers">Number of Users</option>
+              <option value="activeDate">Active Date</option>
+              <option value="deactiveDate">Deactive Date</option>
+              <option value="status">Status</option>
+            </select>
             <input
-              type="file"
-              id="import"
-              accept=".csv"
-              onChange={handleImport}
-              style={{ display: 'none' }}
+              type="text"
+              placeholder={`Search by ${searchField.replace(/([A-Z])/g, ' $1')}`}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
-          </label>
-          <div className="create-branch-container">
-           <button onClick={() => navigate('/create-branch')}>Create Branch</button>
+          </div>
+          <div className="action-buttons">
+            <button onClick={exportToCSV} className="action-button">
+              <img src={downloadIcon} alt="Export" className="icon" />
+              Export
+            </button>
+            <label htmlFor="import" className="action-button">
+              <img src={uploadIcon} alt="Import" className="icon" />
+              Import
+              <input
+                type="file"
+                id="import"
+                accept=".csv"
+                onChange={handleImport}
+                style={{ display: 'none' }}
+              />
+            </label>
+            <div className="create-branch-container">
+              <button onClick={() => navigate('/create-branch')}>Create Branch</button>
+            </div>
           </div>
         </div>
-        </div>
-      
-      <h2 style={{marginLeft: '10px', marginTop: '100px', fontFamily: 'Public Sans', fontStyle: 'normal', fontWeight: '600', fontSize: '24px', lineHeight: '28px', color: '#000000' }}>
-        Total Branches ({filteredBranches.length})
-      </h2>
-      <div className="filter-buttons-container">
-        <span 
-          className={activeFilter === 'all' ? 'active-filter' : ''} 
-          onClick={() => setActiveFilter('all')}
-        >
-          Show All
-        </span>
-        <span 
-          className={activeFilter === 'ongoing' ? 'active-filter' : ''} 
-          onClick={() => setActiveFilter('ongoing')}
-        >
-          Ongoing Subscriptions
-        </span>
-        <span 
-          className={activeFilter === 'expiring' ? 'active-filter' : ''} 
-          onClick={() => setActiveFilter('expiring')}
-        >
-          Expiring Soon
-        </span>
-        <span 
-          className={activeFilter === 'expired' ? 'active-filter' : ''} 
-          onClick={() => setActiveFilter('expired')}
-        >
-          Expired
-        </span>
-      </div>
-      <div className="table-container">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Serial No.</th>
-              <th>Branch Code</th>
-              <th>Branch Name/Email</th>
-              <th>Location</th>
-              <th>Owner Name</th>
-              <th>Subscription Type</th>
-              <th>Users</th>
-              <th>Password</th>
-              <th>Start Date</th>
-              <th>End Date</th>
-              <th>Subscription Fees</th>
-              <th>Remaining Days</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredBranches.map((branch, index) => (
-              <tr key={branch.id}>
-                <td>{index + 1}</td>
-                <td>{branch.branchCode}</td>
-                <td>{branch.branchName}<br />{branch.emailId}</td>
-                <td>{branch.location}</td>
-                <td>{branch.ownerName}</td>
-                <td>{branch.subscriptionType}</td>
-                <td>{branch.numberOfUsers}</td>
-                <td>{branch.password}</td>
-                <td>{branch.activeDate || 'N/A'}</td>
-                <td>{branch.deactiveDate || 'N/A'}</td>
-                <td>{branch.amount}</td>
-                <td>{calculateRemainingDays(branch.deactiveDate)}</td>
-                <td className={calculateRemainingDays(branch.deactiveDate) > 0 ? 'status-active' : 'status-deactive'}>
-                  {calculateRemainingDays(branch.deactiveDate) > 0 ? 'Active' : 'Deactive'}
-                </td>
-                <td className="actions">
-                  <button className="button1" onClick={() => handleEdit(branch.id)}>
-                    <img src={editIcon} alt="Edit" className="icon" />
-                  </button>
-                  {/* <button className="button1" onClick={() => handleDelete(branch.id)}>
-                    <img src={deleteIcon} alt="Delete" className="icon" />
-                  </button> */}
-                </td>
+        <div className="table-container">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Serial No.</th>
+                <th>Branch Code</th>
+                <th>Branch Name/Email</th>
+                <th>Location</th>
+                <th>Owner Name</th>
+                <th>Subscription Type</th>
+                <th>Users</th>
+                <th>Password</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Subscription Fees</th>
+                <th>Remaining Days</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filteredBranches.map((branch, index) => (
+                <tr key={branch.id}>
+                  <td>{index + 1}</td>
+                  <td>{branch.branchCode}</td>
+                  <td>{branch.branchName}<br />{branch.emailId}</td>
+                  <td>{branch.location}</td>
+                  <td>{branch.ownerName}</td>
+                  <td>{branch.subscriptionType}</td>
+                  <td>{branch.numberOfUsers}</td>
+                  <td>{branch.password}</td>
+                  <td>{branch.activeDate || 'N/A'}</td>
+                  <td>{branch.deactiveDate || 'N/A'}</td>
+                  <td>{branch.amount}</td>
+                  <td>{calculateRemainingDays(branch.deactiveDate)}</td>
+                  <td className={calculateRemainingDays(branch.deactiveDate) > 0 ? 'status-active' : 'status-deactive'}>
+                    {calculateRemainingDays(branch.deactiveDate) > 0 ? 'Active' : 'Deactive'}
+                  </td>
+                  <td className="actions">
+                    <button className="button1" onClick={() => handleEdit(branch.id)}>
+                      <img src={editIcon} alt="Edit" className="icon" />
+                    </button>
+                    {/* <button className="button1" onClick={() => handleDelete(branch.id)}>
+                      <img src={deleteIcon} alt="Delete" className="icon" />
+                    </button> */}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
