@@ -48,11 +48,12 @@ const App = () => (
       <Route path="/leads/demo-done" element={<DemoDone />} />
       <Route path="/leads/lead-won" element={<LeadWon />} />
       <Route path="/leads/lead-lost" element={<LeadLost/>} />
+      <Route path="/usersidebar/users" element={<User />} />
 
       <Route path="/" element={<Layout />}>
       <Route path="superadmin" element={<CreateSuperAdmin />} /> {/* Route for the LeadForm */}
       <Route path="profile" element={<Profile />} />
-      <Route path="/user" element={<User />} />
+      
     </Route>
     </Routes>
   </Router>

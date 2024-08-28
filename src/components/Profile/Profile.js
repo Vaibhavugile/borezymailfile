@@ -4,18 +4,98 @@ import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import './Profile.css';
 
-const data = [
-  { name: 'Jan', activity: 4000, subscriptions: 2400, revenue: 2400 },
-  { name: 'Feb', activity: 3000, subscriptions: 1398, revenue: 2210 },
-  { name: 'Mar', activity: 2000, subscriptions: 9800, revenue: 2290 },
-  { name: 'Apr', activity: 2780, subscriptions: 3908, revenue: 2000 },
-  { name: 'May', activity: 1890, subscriptions: 4800, revenue: 2181 },
-  { name: 'Jun', activity: 2390, subscriptions: 3800, revenue: 2500 },
-  { name: 'Jul', activity: 3490, subscriptions: 4300, revenue: 2100 },
-];
-
 const SingleComponent = () => {
+  const [totalRevenue, setTotalRevenue] = useState([]);
+  const [subscriptionsData, setSubscriptionsData] = useState([]);
+  const [activityData, setActivityData] = useState([]); // Added state for activity data
   const [superAdmins, setSuperAdmins] = useState([]);
+
+  const fetchData = async () => {
+    try {
+      // Fetch data from branches
+      const branchesSnapshot = await getDocs(collection(db, 'branches'));
+
+      // Prepare branches data
+      const branches = branchesSnapshot.docs.map(doc => {
+        const data = doc.data();
+        const amount = parseFloat(data.amount) || 0;
+        const activeDate = new Date(data.activeDate);
+        const monthYear = `${activeDate.toLocaleString('default', { month: 'short' })} ${activeDate.getFullYear()}`;
+
+        return {
+          branchName: data.branchName || 'Unknown',
+          amount,
+          monthYear,
+        };
+      });
+
+      // Aggregate revenue by month
+      const monthlyRevenue = branches.reduce((acc, branch) => {
+        if (!acc[branch.monthYear]) {
+          acc[branch.monthYear] = 0;
+        }
+        acc[branch.monthYear] += branch.amount;
+        return acc;
+      }, {});
+
+      // Format data for total revenue chart
+      const formattedRevenueData = Object.keys(monthlyRevenue).map(monthYear => ({
+        name: monthYear,
+        value: monthlyRevenue[monthYear],
+      }));
+      setTotalRevenue(formattedRevenueData);
+
+      // Aggregate subscriptions by month
+      const subscriptions = branches.reduce((acc, branch) => {
+        if (!acc[branch.monthYear]) {
+          acc[branch.monthYear] = 0;
+        }
+        acc[branch.monthYear] += 1; // Count subscriptions
+        return acc;
+      }, {});
+
+      // Format data for subscriptions chart
+      const formattedSubscriptionsData = Object.keys(subscriptions).map(monthYear => ({
+        name: monthYear,
+        count: subscriptions[monthYear],
+      }));
+      setSubscriptionsData(formattedSubscriptionsData);
+
+      // Fetch data from activityLogs
+      const activitySnapshot = await getDocs(collection(db, 'activityLogs'));
+      
+      // Prepare activity data
+      const activity = activitySnapshot.docs.map(doc => {
+        const data = doc.data();
+        const timestamp = data.timestamp?.toDate(); // Convert Firestore Timestamp to JavaScript Date
+        const monthYear = timestamp ? `${timestamp.toLocaleString('default', { month: 'short' })} ${timestamp.getFullYear()}` : 'Unknown';
+
+        return {
+          name: monthYear,
+          count: (data.action === 'login') ? 1 : 0, // Count logins
+        };
+      });
+
+      // Aggregate activity data by month
+      const monthlyActivity = activity.reduce((acc, act) => {
+        if (!acc[act.name]) {
+          acc[act.name] = 0;
+        }
+        acc[act.name] += act.count;
+        return acc;
+      }, {});
+
+      // Format data for activity chart
+      const formattedActivityData = Object.keys(monthlyActivity).map(month => ({
+        name: month,
+        value: monthlyActivity[month],
+      }));
+      setActivityData(formattedActivityData); // Set the activity data
+
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
 
   const fetchSuperAdmins = async () => {
     try {
@@ -31,6 +111,7 @@ const SingleComponent = () => {
   };
 
   useEffect(() => {
+    fetchData();
     fetchSuperAdmins();
   }, []);
 
@@ -42,36 +123,36 @@ const SingleComponent = () => {
           <div className="overview-item">
             <h3>User Activity</h3>
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={data}>
+              <BarChart data={activityData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="activity" fill="#8884d8" />
+                <Bar dataKey="value" fill="#8884d8" />
               </BarChart>
             </ResponsiveContainer>
           </div>
           <div className="overview-item">
             <h3>Total Subscriptions</h3>
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={data}>
+              <BarChart data={subscriptionsData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="subscriptions" fill="#82ca9d" />
+                <Bar dataKey="count" fill="#82ca9d" />
               </BarChart>
             </ResponsiveContainer>
           </div>
           <div className="overview-item">
             <h3>Total Revenue</h3>
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={data}>
+              <BarChart data={totalRevenue}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="revenue" fill="#ffc658" />
+                <Bar dataKey="value" fill="#ffc658" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -80,12 +161,12 @@ const SingleComponent = () => {
         <div className="performance">
           <h3>Monthly Revenue</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={data}>
+            <LineChart data={totalRevenue}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis />
               <Tooltip />
-              <Line type="monotone" dataKey="revenue" stroke="#8884d8" />
+              <Line type="monotone" dataKey="value" stroke="#8884d8" />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -111,7 +192,7 @@ const SingleComponent = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="4">No Data Available</td>
+                  <td colSpan="3">No Data Available</td>
                 </tr>
               )}
             </tbody>

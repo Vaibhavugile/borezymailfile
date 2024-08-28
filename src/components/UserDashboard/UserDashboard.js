@@ -21,7 +21,7 @@ const UserDashboard = () => {
 
         {/* Adjust content width based on the sidebar state */}
         <div className={`dashboard-content-user ${isSidebarOpen ? 'with-sidebar' : 'full-width'}`}>
-          <h1>Welcome to the User Dashboard</h1>
+          <h3>Welcome to the User Dashboard</h3>
           <p>This is where you can add user-specific features and content.</p>
         </div>
       </div>

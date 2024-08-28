@@ -1,11 +1,12 @@
-// src/components/CreateBranch.js
 import React, { useState } from 'react';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { sendEmail } from '../../utils/sendEmail';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
-import './createBranch.css'
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css'; // Import the default CSS for Toastify
+import './createBranch.css'; // Using the same CSS file
 
 const CreateBranch = () => {
   const [formData, setFormData] = useState({
@@ -14,15 +15,13 @@ const CreateBranch = () => {
     branchName: '',
     ownerName: '',
     subscriptionType: 'monthly',
-    startDate: '',
-    endDate: '',
+    activeDate: '',
+    deactiveDate: '',
     numberOfUsers: 5,
     amount: '',
     password: '',
     location: '',
   });
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const navigate = useNavigate();
 
   const today = new Date().toISOString().split('T')[0];
@@ -34,13 +33,11 @@ const CreateBranch = () => {
 
   const handleCreateBranch = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
 
-    const { emailId, branchCode, branchName, ownerName, subscriptionType, startDate, endDate, numberOfUsers, amount, password, location } = formData;
+    const { emailId, branchCode, branchName, ownerName, subscriptionType, activeDate, deactiveDate, numberOfUsers, amount, password, location } = formData;
 
-    if (new Date(startDate) < new Date(today)) {
-      setError('Start date cannot be before today.');
+    if (new Date(activeDate) < new Date(today)) {
+      toast.error('Start date cannot be before today.');
       return;
     }
 
@@ -54,20 +51,37 @@ const CreateBranch = () => {
         branchName,
         ownerName,
         subscriptionType,
-        startDate,
-        endDate,
+        activeDate,
+        deactiveDate,
         numberOfUsers,
         amount,
         password,
         location
       });
 
-      await sendEmail(emailId, password, ownerName, startDate, endDate, amount);
+      await sendEmail(emailId, password, ownerName, activeDate, deactiveDate, amount);
 
-      setSuccess('Branch created, user account set up, and email sent successfully.');
-      navigate('/admin-dashboarda/client');
+      toast.success('Branch created, user account set up, and email sent successfully.');
+      setFormData({ // Reset form data on success
+        emailId: '',
+        branchCode: '',
+        branchName: '',
+        ownerName: '',
+        subscriptionType: 'monthly',
+        activeDate: '',
+        deactiveDate: '',
+        numberOfUsers: 5,
+        amount: '',
+        password: '',
+        location: '',
+      });
+
+      setTimeout(() => {
+        navigate('/admin-dashboard'); // Navigate after a short delay
+      }, 1500); // Adjust the delay as needed
     } catch (error) {
-      setError('Failed to create branch or user. Please try again.');
+      console.error('Error creating branch or user:', error);
+      toast.error('Failed to create branch or user. Please try again.');
     }
   };
 
@@ -160,8 +174,8 @@ const CreateBranch = () => {
             <label>Start Date</label>
             <input 
                 type="date" 
-                name="startDate" 
-                value={formData.startDate} 
+                name="activeDate" 
+                value={formData.activeDate} 
                 onChange={handleChange} 
                 min={today} 
                 required 
@@ -171,8 +185,8 @@ const CreateBranch = () => {
             <label>End Date</label>
             <input 
                 type="date" 
-                name="endDate" 
-                value={formData.endDate} 
+                name="deactiveDate" 
+                value={formData.deactiveDate} 
                 onChange={handleChange} 
                 required 
             />
@@ -204,8 +218,8 @@ const CreateBranch = () => {
 
         <button type="submit">Create Branch</button>
       </form>
-      {error && <p className="error-message">{error}</p>}
-      {success && <p className="success-message">{success}</p>}
+
+      <ToastContainer /> {/* Add this to render the toast notifications */}
     </div>
   );
 };

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { useNavigate } from 'react-router-dom';
+import { toast, ToastContainer } from 'react-toastify'; // Import react-toastify
+import 'react-toastify/dist/ReactToastify.css'; // Import CSS for react-toastify
 import '../Branch/createBranch.css'; // Using the same CSS file
 
 const Lead = () => {
@@ -17,8 +19,6 @@ const Lead = () => {
     status: 'details shared',
     comment: '' // Added comment field
   });
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -28,10 +28,15 @@ const Lead = () => {
 
   const handleCreateLead = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
 
     const { businessName, businessType, contactNumber, emailId, location, assignedTo, source, nextFollowup, status, comment } = formData;
+
+    // Check if the nextFollowup date is in the past
+    const today = new Date().toISOString().split('T')[0];
+    if (new Date(nextFollowup) < new Date(today)) {
+      toast.error('Next follow-up date cannot be in the past.');
+      return;
+    }
 
     try {
       await addDoc(collection(db, 'leads'), {
@@ -47,10 +52,12 @@ const Lead = () => {
         comment // Storing comment in the database
       });
 
-      setSuccess('Lead created successfully.');
-      navigate('/admin-dashboard');
+      toast.success('Lead created successfully.');
+      setTimeout(() => {
+        navigate('/leads'); // Navigate after a short delay
+      }, 1500); // Adjust the delay as needed
     } catch (error) {
-      setError('Failed to create lead. Please try again.');
+      toast.error('Failed to create lead. Please try again.');
     }
   };
 
@@ -164,7 +171,7 @@ const Lead = () => {
           <option value="lead lost">Lead Lost</option>
         </select>
 
-        <label>Comment</label> {/* New label for comments */}
+        <label>Comment</label>
         <textarea
           name="comment"
           value={formData.comment}
@@ -174,8 +181,9 @@ const Lead = () => {
 
         <button type="submit">Create Lead</button>
       </form>
-      {error && <p className="error-message">{error}</p>}
-      {success && <p className="success-message">{success}</p>}
+
+      {/* Toast Container for Notifications */}
+      <ToastContainer />
     </div>
   );
 };

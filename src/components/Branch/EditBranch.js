@@ -1,10 +1,11 @@
-// src/components/EditBranch.js
 import React, { useState, useEffect } from 'react';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { useParams, useNavigate } from 'react-router-dom';
+import { toast, ToastContainer } from 'react-toastify'; // Import react-toastify
+ // Import CSS for react-toastify
 import './editBranch.css';
- 
+
 const EditBranch = () => {
   const { id } = useParams(); // Get branch ID from URL
   const navigate = useNavigate();
@@ -15,16 +16,14 @@ const EditBranch = () => {
     branchName: '',
     ownerName: '',
     subscriptionType: 'monthly',
-    startDate: '',
-    endDate: '',
+    activeDate: '',
+    deactiveDate: '',
     numberOfUsers: 5,
     amount: '',
     password: '',
     location: '',
   });
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-
+  
   // Get today's date in yyyy-mm-dd format
   const today = new Date().toISOString().split('T')[0];
 
@@ -36,10 +35,10 @@ const EditBranch = () => {
         if (branchSnapshot.exists()) {
           setFormData(branchSnapshot.data());
         } else {
-          setError('Branch not found.');
+          toast.error('Branch not found.');
         }
       } catch (error) {
-        setError('Error fetching branch details.');
+        toast.error('Error fetching branch details.');
       }
     };
 
@@ -52,38 +51,34 @@ const EditBranch = () => {
     setFormData(prevState => ({ ...prevState, [name]: value }));
   };
 
-  // Function to increase or decrease the number of users
-  // const handleNumberChange = (operation) => {
-  //   setFormData(prevState => ({
-  //     ...prevState,
-  //     numberOfUsers: operation === 'increase' ? prevState.numberOfUsers + 1 : Math.max(prevState.numberOfUsers - 1, 5),
-  //   }));
-  // };
-
   const handleUpdateBranch = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
 
-    const { startDate } = formData;
-    if (new Date(startDate) < new Date(today)) {
-      setError('Start date cannot be before today.');
+    const { activeDate } = formData;
+    if (new Date(activeDate) < new Date(today)) {
+      toast.error('Start date cannot be before today.');
       return;
     }
 
     try {
       const branchDoc = doc(db, 'branches', id);
       await updateDoc(branchDoc, formData);
-      setSuccess('Branch details updated successfully.');
-      navigate('/admin-dashboard');
+      toast.success('Branch details updated successfully.');
+      setTimeout(() => {
+        navigate('/admin-dashboard'); // Navigate after a short delay
+      }, 3500);
     } catch (error) {
-      setError('Failed to update branch details. Please try again.');
+      toast.error('Failed to update branch details. Please try again.');
     }
   };
+
+  // Simple test to ensure toast notifications work
+  const testToast = () => toast.success("Test Toast Success!");
 
   return (
     <div className="create-branch">
       <h2>Edit Branch</h2>
+      <button onClick={testToast}>Show Test Toast</button>
       <form onSubmit={handleUpdateBranch}>
         {/* Email ID and Password */}
         <div className="field-row">
@@ -94,7 +89,6 @@ const EditBranch = () => {
               name="emailId" 
               value={formData.emailId} 
               onChange={handleChange} 
-              
               required 
             />
           </div>
@@ -105,7 +99,6 @@ const EditBranch = () => {
               name="password" 
               value={formData.password} 
               onChange={handleChange} 
-             
               required 
             />
           </div>
@@ -118,7 +111,6 @@ const EditBranch = () => {
               name="branchCode" 
               value={formData.branchCode} 
               onChange={handleChange} 
-              
               required 
             />
           </div>
@@ -129,7 +121,6 @@ const EditBranch = () => {
               name="location" 
               value={formData.location} 
               onChange={handleChange} 
-              
               required 
             />
           </div>
@@ -140,7 +131,6 @@ const EditBranch = () => {
           name="branchName" 
           value={formData.branchName} 
           onChange={handleChange} 
-          
           required 
         />
         
@@ -150,7 +140,6 @@ const EditBranch = () => {
           name="ownerName" 
           value={formData.ownerName} 
           onChange={handleChange} 
-          
           required 
         />
         
@@ -171,8 +160,8 @@ const EditBranch = () => {
             <label>Start Date</label>
             <input 
                 type="date" 
-                name="startDate" 
-                value={formData.startDate} 
+                name="activeDate" 
+                value={formData.activeDate} 
                 onChange={handleChange} 
                 min={today} 
                 required 
@@ -182,8 +171,8 @@ const EditBranch = () => {
             <label>End Date</label>
             <input 
                 type="date" 
-                name="endDate" 
-                value={formData.endDate} 
+                name="deactiveDate" 
+                value={formData.deactiveDate} 
                 onChange={handleChange} 
                 required 
             />
@@ -216,9 +205,8 @@ const EditBranch = () => {
         <button type="submit">Edit Branch</button>
       </form>
       
-      {/* Success/Error Message */}
-      {error && <p className="error-message">{error}</p>}
-      {success && <p className="success-message">{success}</p>}
+      {/* Toast Container for Notifications */}
+      <ToastContainer />
     </div>
   );
 };

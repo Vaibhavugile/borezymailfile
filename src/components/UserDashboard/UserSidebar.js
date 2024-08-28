@@ -1,31 +1,44 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import './UseSidebar.css';
+import './UseSidebar.css'; // Import the CSS file for Sidebar
+import calender from '../../assets/calendar.png';
+import product from '../../assets/product.png';
+import leads from '../../assets/leads.png';
+import customers from '../../assets/costumer.png';
+import user from '../../assets/user.png';
 
-const UserSidebar = ({ isOpen }) => {
+const UserSidebar = ({isOpen}) => {
   const location = useLocation();
 
   return (
     <div className={`sidebar ${isOpen ? 'open' : ''}`}>
       <nav>
         <ul>
-          <li className="sidebar-greeting1">Welcome Back User,</li>
-          <li className="sidebar-greeting">Track Your Progress Here </li>
-          <li>
-            <Link to="/dashboard" className={location.pathname === '/dashboard' ? 'active' : ''}>
-              Dashboard
-            </Link>
+          <li className="sidebar-greeting1">Welcome User,</li>
+          <li className="sidebar-greeting">Leads</li>
+          
+          <li className={`sidebar-link ${location.pathname === '/usersidebar/availability' ? 'active' : ''}`}>
+            <Link to="/usersidebar/availability" >
+             <img src={calender} alt="Availability" className="icon" />  Availability </Link>
           </li>
-          <li>
-            <Link to="/profile" className={location.pathname === '/profile' ? 'active' : ''}>
-              Profile
-            </Link>
+          <li className={`sidebar-link ${location.pathname === '/usersidebar/leads' ? 'active' : ''}`}>
+            <Link to="/usersidebar/leads" > 
+            <img src={leads} alt="Leads" className="icon" /> Leads </Link>
           </li>
-          <li>
-            <Link to="/user" className={location.pathname === '/user' ? 'active' : ''}>
-              user
-            </Link>
+          <li className={`sidebar-link ${location.pathname === '/usersidebar/clients' ? 'active' : ''}`}>
+            <Link to="/usersidebar/clients" > 
+            <img src={customers} alt="Customers" className="icon" /> Clients </Link>
           </li>
+          <li className={`sidebar-link ${location.pathname === '/usersidebar/product' ? 'active' : ''}`}>
+            <Link to="/usersidebar/product"> 
+            <img src={product} alt="Product" className="icon" />Product</Link>
+          </li>
+          <li className={`sidebar-link ${location.pathname === '/usersidebar/users' ? 'active' : ''}`}>
+            <Link to="/usersidebar/users">
+            <img src={user} alt="Users" className="icon" />Users</Link>
+          </li>
+          
+          
         </ul>
       </nav>
     </div>
