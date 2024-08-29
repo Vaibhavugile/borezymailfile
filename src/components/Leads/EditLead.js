@@ -155,7 +155,7 @@ const EditLead = () => {
         
         <div className="date-fields-container">
           <div>
-            <label>Date Timestamp</label>
+            <label>Next Folleup Date</label>
             <input 
               type="datetime-local" 
               name="dateTimestamp" 

@@ -33,8 +33,17 @@ const Sidebar = ({isOpen}) => {
             <Link to="/leads/lead-lost">Lead Lost</Link>
           </li>
           <li className="sidebar-greeting">Clients</li>
-          <li className={`sidebar-link ${location.pathname === '/admin-dashboard' ? 'active' : ''}`}>
-            <Link to="/admin-dashboard">Show All</Link>
+          <li className={`sidebar-link ${location.pathname === '/branches' ? 'active' : ''}`}>
+            <Link to="/branches">Show All</Link>
+          </li>
+          <li className={`sidebar-link ${location.pathname === '/branches/active' ? 'active' : ''}`}>
+            <Link to="/branches/active">Ongoing Subscrptions</Link>
+          </li>
+          <li className={`sidebar-link ${location.pathname === '/branches/deactive' ? 'active' : ''}`}>
+            <Link to="/branches/deactive">Expired</Link>
+          </li>
+          <li className={`sidebar-link ${location.pathname === '/branches/expiring-soon' ? 'active' : ''}`}>
+            <Link to="/branches/expiring-soon">Expiring Soon</Link>
           </li>
         </ul>
       </nav>

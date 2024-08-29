@@ -18,6 +18,7 @@ import EditLead from './components/Leads/EditLead';
 import { UserProvider } from './components/Auth/UserContext';
 import DetailsShared from './components/Leads/Leads';
 import DemoScheduled from './components/Leads/Leads';
+import Active from './components/Admin/AdminDashboard';
 import DemoDone from './components/Leads/Leads';
 import LeadWon from './components/Leads/Leads';
 import LeadLost from './components/Leads/Leads';
@@ -32,7 +33,10 @@ const App = () => (
       {/* <Route path="/" element={<Landing />} /> */}
       <Route path="/" element={<Login />} />
       <Route path="/change-password" element={<ChangePassword />} />
-      <Route path="/admin-dashboard" element={<AdminDashboard />} />
+      <Route path="/branches" element={<AdminDashboard />} />
+      <Route path="/branches/active" element={<AdminDashboard />} />
+      <Route path="/branches/deactive" element={<AdminDashboard />} />
+      <Route path="/branches/expiring-soon" element={<AdminDashboard />} />
       <Route path="/leads" element={<Leads />} />
       <Route path="/welcome" element={<Welcome />} />
       <Route path="/create-branch" element={<CreateBranch />} />

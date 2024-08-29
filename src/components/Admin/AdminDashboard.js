@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Papa from 'papaparse'; // Import PapaParse for CSV handling
 import editIcon from '../../assets/Edit.png';
 import deleteIcon from '../../assets/Trash Can - Copy.png';
@@ -11,29 +11,33 @@ import Sidebar from '../Leads/Sidebar';
 import Header from '../Leads/Header';
 import '../Profile/Profile.css';
 import search from '../../assets/Search.png';
+import RightSidebar from '../Leads/RightSidebar';
 
 const AdminDashboard = () => {
   const [branches, setBranches] = useState([]);
   const [filteredBranches, setFilteredBranches] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchField, setSearchField] = useState('branchName'); // Default search by branch name
-  const [activeFilter, setActiveFilter] = useState('all');
-  const navigate = useNavigate();
+  const [searchField, setSearchField] = useState('branchName');
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [importedData, setImportedData] = useState(null); // For storing imported CSV data
+  const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
+  const [selectedBranch, setSelectedBranch] = useState(null);
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const handleSidebarToggle = () => {
-    setSidebarOpen(!sidebarOpen);
+  const handleBranchClick = (branch) => {
+    setSelectedBranch(branch);
+    setRightSidebarOpen(true);
+  };
+
+  const closeRightSidebar = () => {
+    setRightSidebarOpen(false);
   };
 
   useEffect(() => {
     const fetchBranches = async () => {
       const branchesCollection = collection(db, 'branches');
       const branchSnapshot = await getDocs(branchesCollection);
-      const branchList = branchSnapshot.docs.map(doc => {
-        const data = doc.data();
-        return { id: doc.id, ...data };
-      });
+      const branchList = branchSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setBranches(branchList);
     };
 
@@ -41,22 +45,36 @@ const AdminDashboard = () => {
   }, []);
 
   useEffect(() => {
+    const path = location.pathname;
+    const status = path.split('/').pop();
+
     const applyFilter = () => {
       let filtered = branches;
-      
-      if (searchQuery) {
+
+      if (status === 'active') {
+        filtered = filtered.filter(branch => calculateRemainingDays(branch.deactiveDate) > 0);
+      } else if (status === 'deactive') {
+        filtered = filtered.filter(branch => calculateRemainingDays(branch.deactiveDate) <= 0 );
+      } else if (status === 'expiring-soon') {
+        const currentDate = new Date();
         filtered = filtered.filter(branch => {
-          const query = searchQuery.toLowerCase();
-          const fieldValue = branch[searchField]?.toString().toLowerCase();
-          return fieldValue?.includes(query);
+          const endDate = new Date(branch.endDate);
+          const daysRemaining = (endDate - currentDate) / (1000 * 60 * 60 * 24);
+          return daysRemaining <= 7 && daysRemaining > 0;
         });
-      }
-      
+      } 
+
+      filtered = filtered.filter(branch => {
+        const lowerCaseQuery = searchQuery.toLowerCase();
+        const fieldValue = branch[searchField]?.toString().toLowerCase();
+        return fieldValue && fieldValue.includes(lowerCaseQuery);
+      });
+
       setFilteredBranches(filtered);
     };
 
     applyFilter();
-  }, [branches, searchQuery, searchField]);
+  }, [branches, location.pathname, searchQuery, searchField]);
 
   const handleDelete = async (id) => {
     try {
@@ -71,12 +89,21 @@ const AdminDashboard = () => {
     navigate(`/edit-branch/${id}`);
   };
 
-  const calculateRemainingDays = (deactiveDate) => {
-    if (!deactiveDate) return 'N/A';
-    const end = new Date(deactiveDate);
-    const today = new Date();
-    const diffTime = end - today;
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const handleSidebarToggle = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  const formatDate = (date) => {
+    if (!date) return '';
+    const formattedDate = new Date(date);
+    return formattedDate.toLocaleDateString();
+  };
+
+  const filterTitleMap = {
+    'all': 'All Branches',
+    'active': 'Active Branches',
+    'deactive': 'Deactive Branches',
+    'expiring-soon': 'Expiring Soon',
   };
 
   const exportToCSV = () => {
@@ -93,6 +120,14 @@ const AdminDashboard = () => {
       document.body.removeChild(link);
     }
   };
+  const calculateRemainingDays = (deactiveDate) => {
+    if (!deactiveDate) return 'N/A';
+    const end = new Date(deactiveDate);
+    const today = new Date();
+    const diffTime = end - today;
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
+
 
   const handleImport = (event) => {
     const file = event.target.files[0];
@@ -102,9 +137,9 @@ const AdminDashboard = () => {
         complete: (result) => {
           const importedBranches = result.data.map((row) => ({
             ...row,
-            deactiveDate: new Date(row.deactiveDate).toISOString(),
+            endDate: new Date(row.endDate).toISOString(),
           }));
-          setImportedData(importedBranches);
+          setBranches(importedBranches);
         },
       });
     }
@@ -115,8 +150,9 @@ const AdminDashboard = () => {
       <Sidebar isOpen={sidebarOpen} onToggle={handleSidebarToggle} />
       <div className="dashboard-content">
         <Header onMenuClick={handleSidebarToggle} isSidebarOpen={sidebarOpen} />
-        <h2 style={{ marginLeft: '10px', marginTop: '100px' }}>All Branches ({filteredBranches.length})</h2>
-
+        <h2 style={{ marginLeft: '10px', marginTop: '100px' }}>
+          {filterTitleMap[location.pathname.split('/').pop()] || 'All Branches'} ({filteredBranches.length})
+        </h2>
         <div className="toolbar-container">
           <div className="search-bar-container">
             <img src={search} alt="search icon" className="search-icon" />
@@ -126,15 +162,14 @@ const AdminDashboard = () => {
               className="search-dropdown"
             >
               <option value="branchName">Branch Name</option>
-              <option value="emailId">Email Id</option>
               <option value="branchCode">Branch Code</option>
               <option value="location">Location</option>
               <option value="ownerName">Owner Name</option>
-              <option value="subscriptionType">Subscription Type</option>
-              <option value="numberOfUsers">Number of Users</option>
-              <option value="activeDate">Active Date</option>
-              <option value="deactiveDate">Deactive Date</option>
               <option value="status">Status</option>
+              <option value="activeDate">Start Date</option>
+              <option value="deactiveDate">End Date</option>
+              <option value="amount">amount</option>
+              
             </select>
             <input
               type="text"
@@ -160,12 +195,13 @@ const AdminDashboard = () => {
               />
             </label>
             <div className="create-branch-container">
-              <button onClick={() => navigate('/create-branch')}>Create Branch</button>
+              <button onClick={() => navigate('/create-branch')}>Add Branch</button>
             </div>
           </div>
         </div>
+
         <div className="table-container">
-          <table className="table">
+        <table className="table">
             <thead>
               <tr>
                 <th>Serial No.</th>
@@ -216,6 +252,7 @@ const AdminDashboard = () => {
           </table>
         </div>
       </div>
+      <RightSidebar isOpen={rightSidebarOpen} onClose={closeRightSidebar} selectedBranch={selectedBranch} />
     </div>
   );
 };

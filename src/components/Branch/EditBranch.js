@@ -65,7 +65,7 @@ const EditBranch = () => {
       await updateDoc(branchDoc, formData);
       toast.success('Branch details updated successfully.');
       setTimeout(() => {
-        navigate('/admin-dashboard'); // Navigate after a short delay
+        navigate('/branches'); // Navigate after a short delay
       }, 3500);
     } catch (error) {
       toast.error('Failed to update branch details. Please try again.');

@@ -77,7 +77,7 @@ const CreateBranch = () => {
       });
 
       setTimeout(() => {
-        navigate('/admin-dashboard'); // Navigate after a short delay
+        navigate('/branches'); // Navigate after a short delay
       }, 1500); // Adjust the delay as needed
     } catch (error) {
       console.error('Error creating branch or user:', error);
