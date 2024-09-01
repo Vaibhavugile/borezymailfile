@@ -24,6 +24,8 @@ import LeadWon from './components/Leads/Leads';
 import LeadLost from './components/Leads/Leads';
 import User from './components/UserDashboard/User';
 import FreshLeads from './components/Leads/Leads';
+import AddUser from './components/UserDashboard/Adduser';
+
 
 const App = () => (
   <UserProvider>
@@ -53,6 +55,8 @@ const App = () => (
       <Route path="/leads/lead-won" element={<LeadWon />} />
       <Route path="/leads/lead-lost" element={<LeadLost/>} />
       <Route path="/usersidebar/users" element={<User />} />
+      <Route path="/adduser" element={<AddUser />} />
+      
 
       <Route path="/" element={<Layout />}>
       <Route path="superadmin" element={<CreateSuperAdmin />} /> {/* Route for the LeadForm */}

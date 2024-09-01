@@ -28,6 +28,7 @@
   /* Adjust content when sidebar is open */
   .dashboard-content-user.with-sidebar {
     margin-left: 250px;
+    
   }
   
   /* Full width content when sidebar is closed */

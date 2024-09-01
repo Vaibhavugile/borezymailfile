@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Checkbox, TextField, IconButton, InputAdornment } from '@mui/material';
 import { signInWithEmailAndPassword, getAuth } from 'firebase/auth';
-import { collection, query, where, getDocs,updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from './UserContext'; // Import the context
@@ -21,44 +21,29 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-
   useEffect(() => {
     const checkAuthToken = async () => {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       if (token) {
         try {
           const auth = getAuth();
-          const user = await auth.verifyIdToken(token); // Check token validity
+          const user = await auth.verifyIdToken(token);
           if (user) {
-            // If token is valid, set user data and redirect
             setUserData({ name: user.name, role: user.role, email: user.email });
             navigate(user.role === 'Super Admin' ? '/admin-dashboard' : '/user-dashboard');
           }
         } catch (error) {
           console.error('Token validation error:', error);
-          // Clear invalid token
           localStorage.removeItem('authToken');
           sessionStorage.removeItem('authToken');
         }
       }
     };
-
     checkAuthToken();
   }, [setUserData, navigate]);
 
-  useEffect(() => {
-    // Autofill email if token is present
-    const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-    if (token) {
-      const userEmail = JSON.parse(localStorage.getItem('userEmail') || sessionStorage.getItem('userEmail'));
-      if (userEmail) {
-        setEmail(userEmail);
-      }
-    }
-  }, []);
-
   const togglePasswordVisibility = () => {
-    setShowPassword(prev => !prev);
+    setShowPassword((prev) => !prev);
   };
 
   const handleLogin = async (e) => {
@@ -72,10 +57,8 @@ const Login = () => {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Generate a token
       const token = await user.getIdToken();
 
-      // Store the token
       if (rememberMe) {
         localStorage.setItem('authToken', token);
         localStorage.setItem('userEmail', JSON.stringify(email));
@@ -83,8 +66,6 @@ const Login = () => {
         sessionStorage.setItem('authToken', token);
         sessionStorage.setItem('userEmail', JSON.stringify(email));
       }
-
-      // Check user role
       const superAdminQuery = query(collection(db, 'superadmins'), where('email', '==', email));
       const superAdminSnapshot = await getDocs(superAdminQuery);
 
@@ -95,55 +76,23 @@ const Login = () => {
         return;
       }
 
-      const adminQuery = query(collection(db, 'admins'), where('email', '==', email));
-      const adminSnapshot = await getDocs(adminQuery);
-
-      if (!adminSnapshot.empty) {
-        const adminData = adminSnapshot.docs[0].data();
-        setUserData({ name: adminData.name, role: 'Admin', email });
-        navigate('/leads');
-        return;
-      }
-
       const branchQuery = query(collection(db, 'branches'), where('emailId', '==', email));
       const branchSnapshot = await getDocs(branchQuery);
 
       if (!branchSnapshot.empty) {
         const branchData = branchSnapshot.docs[0].data();
-        setUserData({ name: branchData.name, role: 'Branch Manager', email });
-        // if (branchData.firstLogin) {
-        //   navigate('/change-password');
-        //   await updateDoc(branchData, { firstLogin: false });
-        //   return;
-        // }
+
+        // Set user data with branchCode and branchName for branch managers
+        setUserData({
+          name: branchData.ownerName,
+          role: 'Branch Manager',
+          email,
+          branchCode: branchData.branchCode,  // Add branch code to user data
+          branchName: branchData.branchName,
+          numberOfUsers: branchData.numberOfUsers,  // Add branch name to user data
+        });
+
         navigate('/welcome');
-        return;
-      }
-
-      const branchData = branchSnapshot.docs[0].data();
-      const today = await fetchRealTimeDate();
-
-      const activeDate = new Date(branchData.activeDate);
-      const deactiveDate = new Date(branchData.deactiveDate);
-
-      if (today < activeDate) {
-       
-        setLoading(false);
-        return;
-      }
-
-      if (today > deactiveDate) {
-        setLoading(false);
-        return;
-      }
-
-      const userQuery = query(collection(db, 'users'), where('email', '==', email));
-      const userSnapshot = await getDocs(userQuery);
-
-      if (!userSnapshot.empty) {
-        const userData = userSnapshot.docs[0].data();
-        setUserData({ name: userData.name, role: 'User', email });
-        navigate('/user-dashboard');
         return;
       }
 
@@ -170,9 +119,7 @@ const Login = () => {
 
       <div className="form-container">
         <div className="title">Sign In</div>
-        <div className="subtitle">
-          Welcome back! Please sign in to your account
-        </div>
+        <div className="subtitle">Welcome back! Please sign in to your account</div>
 
         <form onSubmit={handleLogin} className="login-form">
           <div className="form-group">
@@ -189,7 +136,7 @@ const Login = () => {
             <TextField
               label="Password"
               variant="outlined"
-              type={showPassword ? 'text' : 'password'} // Toggle password visibility
+              type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -209,14 +156,12 @@ const Login = () => {
           <div className="remember-me">
             <Checkbox
               checked={rememberMe}
-              onChange={() => setRememberMe(prev => !prev)}
+              onChange={() => setRememberMe((prev) => !prev)}
             />
             <label>Remember Me</label>
           </div>
 
-          <div className="forgot-password">
-            Forgot your password
-          </div>
+          <div className="forgot-password">Forgot your password</div>
 
           <Button fullWidth variant="contained" type="submit" disabled={loading}>
             {loading ? 'Logging in...' : 'Sign In'}

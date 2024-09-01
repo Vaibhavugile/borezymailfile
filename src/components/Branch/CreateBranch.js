@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc,setDoc, doc  } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { sendEmail } from '../../utils/sendEmail';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
@@ -45,7 +45,7 @@ const CreateBranch = () => {
       const auth = getAuth();
       await createUserWithEmailAndPassword(auth, emailId, password);
 
-      await addDoc(collection(db, 'branches'), {
+      await setDoc(doc(db, 'branches',branchCode), {
         emailId,
         branchCode,
         branchName,
@@ -162,7 +162,7 @@ const CreateBranch = () => {
           name="subscriptionType" 
           value={formData.subscriptionType} 
           onChange={handleChange} 
-          required
+          requireda
         >
           <option value="daily">Daily</option>
           <option value="monthly">Monthly</option>
