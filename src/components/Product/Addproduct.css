@@ -1,0 +1,121 @@
+body {
+  background-color: #f5f7fa;
+  overflow-y: auto;
+}
+
+.add-user-container {
+  width: 80%;
+  margin: 0 auto;
+  max-width: 1200px;
+  margin: 100px auto;
+  padding: 30px;
+  background-color: #ffffff;
+  box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+}
+
+h1 {
+  font-family: 'Public Sans', sans-serif;
+  font-size: 28px;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.subheading {
+  font-family: 'Public Sans', sans-serif;
+  font-size: 16px;
+  color: #555;
+  margin-bottom: 25px;
+}
+
+.add-user-form {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.form-group {
+  width: 48%;
+  margin-bottom: 20px;
+  
+}
+
+.form-group label {
+  display: block;
+  font-family: 'Public Sans', sans-serif;
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 5px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+.form-group input:focus {
+  border-color: #164DC3;
+  outline: none;
+}
+
+.form-left, .form-right {
+  width: 100%;
+}
+
+.button-group {
+  display: flex;
+  justify-content: flex-end;
+  
+  margin-top: 20px;
+  
+}
+
+.btn {
+  padding: 12px 24px;
+  font-family: 'Public Sans', sans-serif;
+  font-size: 14px;
+  border-radius: 5px;
+  margin-left: 10px;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.3s ease;
+}
+
+.btn.cancel {
+  background-color: #d0d0d0;
+  color: #333;
+}
+
+.btn.cancel:hover {
+  background-color: #b5b5b5;
+}
+
+.btn.customise, .btn.add-employee {
+  background-color: #164DC3;
+  color: white;
+}
+
+.btn.customise:hover, .btn.add-employee:hover {
+  background-color: #0b3a91;
+}
+
+@media (max-width: 768px) {
+  .form-group {
+    width: 100%;
+  }
+
+  .button-group {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .btn {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+}

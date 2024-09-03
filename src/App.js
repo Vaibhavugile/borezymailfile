@@ -8,7 +8,7 @@ import CreateBranch from './components/Branch/CreateBranch';
 import EditBranch from './components/Branch/EditBranch';
 import ActiveLog from './components/Log/ActiveLog';
 import Leads from './components/Leads/Leads';
-import Product from './components/Product/Product';
+
 import Customize from './components/Customize/Customize';
 import CreateSuperAdmin from './components/Profile/CreateSuperAdmin';
 import Profile from './components/Profile/Profile';
@@ -25,6 +25,7 @@ import LeadLost from './components/Leads/Leads';
 import User from './components/UserDashboard/User';
 import FreshLeads from './components/Leads/Leads';
 import AddUser from './components/UserDashboard/Adduser';
+import AddProduct from './components/Product/AddProduct';
 
 
 const App = () => (
@@ -43,7 +44,7 @@ const App = () => (
       <Route path="/welcome" element={<Welcome />} />
       <Route path="/create-branch" element={<CreateBranch />} />
       <Route path="/edit-branch/:id" element={<EditBranch />} />
-      <Route path="/product" element={<Product />} />
+      
       <Route path="/customize" element={<Customize />} />
       <Route path="/active-log" element={<ActiveLog />} />
       <Route path="/create-lead" element={<Lead />} />
@@ -56,6 +57,7 @@ const App = () => (
       <Route path="/leads/lead-lost" element={<LeadLost/>} />
       <Route path="/usersidebar/users" element={<User />} />
       <Route path="/adduser" element={<AddUser />} />
+      <Route path="/addproduct" element={<AddProduct />} />
       
 
       <Route path="/" element={<Layout />}>

@@ -29,8 +29,8 @@ const UserSidebar = ({isOpen}) => {
             <Link to="/usersidebar/clients" > 
             <img src={customers} alt="Customers" className="icon" /> Clients </Link>
           </li>
-          <li className={`sidebar-link ${location.pathname === '/usersidebar/product' ? 'active' : ''}`}>
-            <Link to="/usersidebar/product"> 
+          <li className={`sidebar-link ${location.pathname === '/addproduct' ? 'active' : ''}`}>
+            <Link to="/addproduct"> 
             <img src={product} alt="Product" className="icon" />Product</Link>
           </li>
           <li className={`sidebar-link ${location.pathname === '/usersidebar/users' ? 'active' : ''}`}>
