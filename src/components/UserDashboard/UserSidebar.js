@@ -30,7 +30,7 @@ const UserSidebar = ({isOpen}) => {
             <img src={customers} alt="Customers" className="icon" /> Clients </Link>
           </li>
           <li className={`sidebar-link ${location.pathname === '/addproduct' ? 'active' : ''}`}>
-            <Link to="/addproduct"> 
+            <Link to="/productdashboard"> 
             <img src={product} alt="Product" className="icon" />Product</Link>
           </li>
           <li className={`sidebar-link ${location.pathname === '/usersidebar/users' ? 'active' : ''}`}>

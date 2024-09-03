@@ -26,6 +26,7 @@ import User from './components/UserDashboard/User';
 import FreshLeads from './components/Leads/Leads';
 import AddUser from './components/UserDashboard/Adduser';
 import AddProduct from './components/Product/AddProduct';
+import ProductDashboard from './components/Product/Product';
 
 
 const App = () => (
@@ -58,6 +59,7 @@ const App = () => (
       <Route path="/usersidebar/users" element={<User />} />
       <Route path="/adduser" element={<AddUser />} />
       <Route path="/addproduct" element={<AddProduct />} />
+      <Route path="/productdashboard" element={<ProductDashboard />} />
       
 
       <Route path="/" element={<Layout />}>
