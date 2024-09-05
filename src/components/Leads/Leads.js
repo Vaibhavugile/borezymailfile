@@ -170,10 +170,12 @@ const Leads = () => {
           <div className="search-bar-container">
             <img src={search} alt="search icon" className="search-icon" />
             <select
+            
               value={searchField}
               onChange={(e) => setSearchField(e.target.value)}
               className="search-dropdown"
             >
+              
               <option value="businessName">Business Name</option>
               <option value="contactNumber">Contact Number</option>
               <option value="emailId">Email ID</option>

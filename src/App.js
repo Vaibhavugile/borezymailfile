@@ -8,7 +8,7 @@ import CreateBranch from './components/Branch/CreateBranch';
 import EditBranch from './components/Branch/EditBranch';
 import ActiveLog from './components/Log/ActiveLog';
 import Leads from './components/Leads/Leads';
-
+import BookProduct from './components/UserDashboard/Availability/Booking';
 import Customize from './components/Customize/Customize';
 import CreateSuperAdmin from './components/Profile/CreateSuperAdmin';
 import Profile from './components/Profile/Profile';
@@ -27,6 +27,7 @@ import FreshLeads from './components/Leads/Leads';
 import AddUser from './components/UserDashboard/Adduser';
 import AddProduct from './components/Product/AddProduct';
 import ProductDashboard from './components/Product/Product';
+import CheckAvailability from './components/UserDashboard/Availability/Availability';
 
 
 const App = () => (
@@ -60,6 +61,8 @@ const App = () => (
       <Route path="/adduser" element={<AddUser />} />
       <Route path="/addproduct" element={<AddProduct />} />
       <Route path="/productdashboard" element={<ProductDashboard />} />
+      <Route path="/usersidebar/availability" element={<BookProduct />} />
+      
       
 
       <Route path="/" element={<Layout />}>

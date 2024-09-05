@@ -180,8 +180,9 @@
   }
   .product-image {
     /* Set a maximum height for the image */
-    width: 50px; /* Adjust width automatically */
-    height: 50px; /* Adjust height automatically */
+    width: 40px; /* Adjust width automatically */
+    height: 40px; /* Adjust height automatically */
     object-fit: cover; /* Cover the defined dimensions while maintaining aspect ratio */
     border-radius: 8px; /* Optional: Add rounded corners */
   }
+  

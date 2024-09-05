@@ -63,9 +63,7 @@ h1 {
   outline: none;
 }
 
-.form-left, .form-right {
-  width: 100%;
-}
+
 
 .button-group {
   display: flex;
@@ -103,6 +101,7 @@ h1 {
 .btn.customise:hover, .btn.add-employee:hover {
   background-color: #0b3a91;
 }
+
 
 @media (max-width: 768px) {
   .form-group {

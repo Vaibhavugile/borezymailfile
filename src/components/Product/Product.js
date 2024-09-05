@@ -1,43 +1,55 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, deleteDoc, doc, query, where, getDoc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc, query, where } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { useNavigate } from 'react-router-dom';
-import Papa from 'papaparse'; // Import PapaParse for CSV operations
-import './Product.css'; // Import your CSS file
+import Papa from 'papaparse';
+import './Product.css';
 import UserHeader from '../UserDashboard/UserHeader';
 import UserSidebar from '../UserDashboard/UserSidebar';
-import searchIcon from '../../assets/Search.png'; // Import search icon
-import downloadIcon from '../../assets/Download.png'; // Import download icon
-import uploadIcon from '../../assets/Upload.png'; // Import upload icon
-import { useUser } from '../Auth/UserContext'; 
+import searchIcon from '../../assets/Search.png';
+import downloadIcon from '../../assets/Download.png';
+import uploadIcon from '../../assets/Upload.png';
+import { useUser } from '../Auth/UserContext';
+import ProductDetailSidebar from './ProductDetailSidebar';
 
 const ProductDashboard = () => {
   const [products, setProducts] = useState([]);
-  const [totalProducts, setTotalProducts] = useState(0); // State to keep track of total products
-  const [loading, setLoading] = useState(true); // Loading state
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState(''); // Search query state
-  const [searchField, setSearchField] = useState('productName'); // Search field state
-  const [importedData, setImportedData] = useState(null); // Imported data state
+  const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchField, setSearchField] = useState('productName');
+  const [importedData, setImportedData] = useState(null);
   const navigate = useNavigate();
-  const { userData } = useUser(); 
-  const [originalProducts, setOriginalProducts] = useState([]);
+  const { userData } = useUser();
+  const [customFields, setCustomFields] = useState([]);
+  const [selectedProduct, setSelectedProduct] = useState(null);  // State for selected product
 
   useEffect(() => {
     const fetchProductsData = async () => {
       try {
         const q = query(
           collection(db, 'products'),
-          where('branchCode', '==', userData.branchCode) // Filter by branch code if needed
+          where('branchCode', '==', userData.branchCode)
         );
         const querySnapshot = await getDocs(q);
         const fetchedProducts = querySnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         }));
+
+        // Gather all custom fields from products
+        const allCustomFields = new Set();
+        fetchedProducts.forEach((product) => {
+          if (product.customFields) {
+            Object.keys(product.customFields).forEach(field => allCustomFields.add(field));
+          }
+        });
+
         setProducts(fetchedProducts);
-        setOriginalProducts(fetchedProducts);
         setTotalProducts(fetchedProducts.length);
+        setCustomFields([...allCustomFields]);
       } catch (error) {
         console.error('Error fetching products data:', error);
       } finally {
@@ -73,9 +85,9 @@ const ProductDashboard = () => {
   const handleSearch = () => {
     const lowerCaseQuery = searchQuery.toLowerCase();
     if (lowerCaseQuery === '') {
-      setProducts(originalProducts); // Show all products if search query is empty
+      setProducts(products); // Show all products if search query is empty
     } else {
-      const filteredProducts = originalProducts.filter(product =>
+      const filteredProducts = products.filter(product =>
         product[searchField]?.toLowerCase().includes(lowerCaseQuery)
       );
       setProducts(filteredProducts);
@@ -109,13 +121,18 @@ const ProductDashboard = () => {
         complete: (result) => {
           const importedProducts = result.data.map(row => ({
             ...row,
-            // Convert date fields if needed
           }));
           setImportedData(importedProducts);
-          console.log(importedProducts);
         },
       });
     }
+  };
+  const handleProductCodeClick = (product) => {
+    setSelectedProduct(product);
+    setRightSidebarOpen(true);
+  };
+  const closeRightSidebar = () => {
+    setRightSidebarOpen(false);
   };
 
   return (
@@ -123,8 +140,10 @@ const ProductDashboard = () => {
       <UserSidebar isOpen={sidebarOpen} onToggle={handleSidebarToggle} />
       <div className="dashboard-content">
         <UserHeader onMenuClick={handleSidebarToggle} isSidebarOpen={sidebarOpen} />
-        <h2>Total Products</h2>
-        <p>{totalProducts} Products</p>
+        <h2 style={{ marginLeft: '10px', marginTop: '100px' }}>
+          Total Products
+        </h2>
+        <p style={{ marginLeft: '10px' }}>{totalProducts} Products</p>
         <div className="toolbar-container">
           <div className="search-bar-container">
             <img src={searchIcon} alt="search icon" className="search-icon" />
@@ -161,9 +180,9 @@ const ProductDashboard = () => {
                 style={{ display: 'none' }}
               />
             </label>
-            <div className="create-product-container">
+            <div className="create-branch-container">
               <button onClick={handleAddProduct}>Add New Product</button>
-            </div>
+            </div> 
           </div>
         </div>
         <div className="table-container">
@@ -180,34 +199,42 @@ const ProductDashboard = () => {
                   <th>Brand Name</th>
                   <th>Description</th>
                   <th>Quantity</th>
-
                   <th>Price</th>
                   <th>Deposit</th>
-                  
-                  
-                  
+                  {/* Dynamically add custom field headers */}
+                  {customFields.map((field, index) => (
+                    <th key={index}>{field.replace(/([A-Z])/g, ' $1')}</th>
+                  ))}
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {products.map((product,index) => (
+                {products.map((product, index) => (
                   <tr key={product.id}>
                     <td>{index + 1}</td>
                     <td>
-                      {product.imageUrl && (
-                        <img src={product.imageUrl} alt={product.productName} className="product-image" />
+                      {Array.isArray(product.imageUrls) && product.imageUrls.length > 0 ? (
+                        <img src={product.imageUrls[0]} alt={product.productName} className="product-image" />
+                      ) : (
+                        product.imageUrl && (
+                          <img src={product.imageUrl} alt={product.productName} className="product-image" />
+                        )
                       )}
                     </td>
                     <td>{product.productName}</td>
-                    <td>{product.productCode}</td>
+                    <td onClick={() => handleProductCodeClick(product)} style={{ cursor: 'pointer' }} className="clickable">
+                      {product.productCode}
+                    </td>
+
                     <td>{product.brandName}</td>
                     <td>{product.description}</td>
                     <td>{product.quantity}</td>
                     <td>{product.price}</td>
                     <td>{product.deposit}</td>
-                   
-                    
-                    
+                    {/* Render custom field values */}
+                    {customFields.map((field, fieldIndex) => (
+                      <td key={fieldIndex}>{product.customFields?.[field] || '-'}</td>
+                    ))}
                     <td>
                       <div className="action-buttons">
                         <button onClick={() => handleEdit(product.id)}>Edit</button>
@@ -222,6 +249,12 @@ const ProductDashboard = () => {
             <p>No products found</p>
           )}
         </div>
+        <ProductDetailSidebar
+          isOpen={rightSidebarOpen}
+          onClose={() =>  closeRightSidebar(false)}
+          product={selectedProduct}
+          customFields={customFields}
+        />
       </div>
     </div>
   );

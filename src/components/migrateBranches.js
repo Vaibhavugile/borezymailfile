@@ -19,21 +19,21 @@ const db = getFirestore(app);
 
 const migrateBranchIds = async () => {
   try {
-    const querySnapshot = await getDocs(collection(db, 'branches'));
+    const querySnapshot = await getDocs(collection(db, 'products'));
 
     querySnapshot.forEach(async (docSnapshot) => {
-      const branchData = docSnapshot.data();
-      const branchCode = branchData.branchCode;
+      const productData = docSnapshot.data();
+      const productCode = productData.productCode;
 
       // If the branchCode exists, migrate the document
-      if (branchCode) {
+      if (productCode) {
         // Set the new document with branchCode as the ID
-        await setDoc(doc(db, 'branches', branchCode), branchData);
+        await setDoc(doc(db, 'products', productCode), productData);
 
         // Optionally delete the old document with the auto-generated ID
-        await deleteDoc(doc(db, 'branches', docSnapshot.id));
+        await deleteDoc(doc(db, 'products', docSnapshot.id));
 
-        console.log(`Migrated branch with code: ${branchCode}`);
+        console.log(`Migrated branch with code: ${productCode}`);
       }
     });
 

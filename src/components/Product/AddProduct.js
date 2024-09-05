@@ -6,6 +6,7 @@ import { collection, addDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import UserSidebar from '../UserDashboard/UserSidebar';
 import { useUser } from '../Auth/UserContext'; // Access user data from context
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 function AddProduct() {
   const [productName, setProductName] = useState('');
@@ -15,29 +16,52 @@ function AddProduct() {
   const [deposit, setDeposit] = useState('');
   const [productCode, setProductCode] = useState('');
   const [description, setDescription] = useState('');
-  const [image, setImage] = useState(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [images, setImages] = useState([]); // Handle multiple images
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [branchCode, setBranchCode] = useState(''); // Store branch code
 
+  const [customFields, setCustomFields] = useState([]); // Store custom fields
+  const [showCustomFieldForm, setShowCustomFieldForm] = useState(false); // Toggle form visibility
+  const [newFieldLabel, setNewFieldLabel] = useState(''); // New field label
+  const [newFieldType, setNewFieldType] = useState('text'); // New field input type
+  const [customFieldValues, setCustomFieldValues] = useState({}); // Store values for custom fields
+
   const { userData } = useUser(); // Get user data from context
+  const navigate = useNavigate(); // Initialize navigate
+
 
   // Set branchCode based on user data if available
   useEffect(() => {
     if (userData && userData.branchCode) {
       setBranchCode(userData.branchCode);
     }
+    
   }, [userData]);
 
   // Handle image file selection
   const handleImageChange = (e) => {
-    if (e.target.files[0]) {
-      setImage(e.target.files[0]);  // Store selected image
-    }
+    setImages(Array.from(e.target.files)); // Convert FileList to an array
   };
 
   // Toggle sidebar visibility
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  // Handle adding a custom field
+  const handleAddCustomField = () => {
+    if (newFieldLabel) {
+      setCustomFields([...customFields, { label: newFieldLabel, type: newFieldType }]);
+      setNewFieldLabel('');
+      setNewFieldType('text');
+      setShowCustomFieldForm(false);
+    }
+  };
+
+  // Handle deleting a custom field
+  const handleDeleteCustomField = (index) => {
+    const updatedCustomFields = customFields.filter((_, i) => i !== index);
+    setCustomFields(updatedCustomFields);
   };
 
   // Handle form submission
@@ -47,17 +71,18 @@ function AddProduct() {
     try {
       // Reference to Firebase Storage
       const storage = getStorage();
-      let imageUrl = '';
+      const imageUrls = [];
 
       // If an image was selected, upload it
-      if (image) {
+      for (const image of images) {
         const storageRef = ref(storage, `products/${image.name}`);
         await uploadBytes(storageRef, image);
-        imageUrl = await getDownloadURL(storageRef);
+        const imageUrl = await getDownloadURL(storageRef);
+        imageUrls.push(imageUrl); // Save each image URL
       }
 
-      // Add product details to Firestore with the image URL and branchCode
-      await addDoc(collection(db, 'products'), {
+      // Collect all the data including custom field values
+      const productData = {
         productName,
         brandName,
         quantity: parseInt(quantity, 10), // Convert quantity to a number
@@ -65,12 +90,17 @@ function AddProduct() {
         deposit: parseFloat(deposit),     // Convert deposit to a float
         productCode,
         description,
-        imageUrl,                         // Save the image URL in Firestore
+        imageUrls,                            // Save the image URL in Firestore
         branchCode,                       // Store the branch code with the product
-      });
+        customFields: customFieldValues  // Save custom field values
+      };
+
+      await addDoc(collection(db, 'products',productCode), productData);
 
       alert('Product added successfully!');
-      // Optionally, reset the form here
+
+      navigate('/productdashboard');
+      // Optionally, reset the form here except custom fields
       setProductName('');
       setBrandName('');
       setQuantity('');
@@ -78,7 +108,8 @@ function AddProduct() {
       setDeposit('');
       setProductCode('');
       setDescription('');
-      setImage(null);
+      setImages([]); // Clear images;
+      setCustomFieldValues({}); // Clear custom field values but keep the fields
 
     } catch (error) {
       console.error('Error adding product: ', error);
@@ -167,6 +198,7 @@ function AddProduct() {
               <input 
                 type="file" 
                 id="image" 
+                multiple
                 onChange={handleImageChange}
               />
             </div>
@@ -192,10 +224,52 @@ function AddProduct() {
               />
             </div>
 
+            {/* Render custom fields */}
+            {customFields.map((field, index) => (
+              <div className="form-group" key={index}>
+                <label htmlFor={field.label}>{field.label}</label>
+                <input 
+                  type={field.type} 
+                  id={field.label}
+                  placeholder={`Enter ${field.label}`} 
+                  value={customFieldValues[field.label] || ''}
+                  onChange={(e) => setCustomFieldValues({ ...customFieldValues, [field.label]: e.target.value })}
+                  required
+                />
+                <button type="button" onClick={() => handleDeleteCustomField(index)}>Delete</button>
+              </div>
+            ))}
+
+            {/* Custom Field Section */}
+            {showCustomFieldForm && (
+              <div className="form-group">
+                <label htmlFor="newFieldLabel">Custom Field Label</label>
+                <input 
+                  type="text" 
+                  id="newFieldLabel" 
+                  placeholder="Enter custom label" 
+                  value={newFieldLabel}
+                  onChange={(e) => setNewFieldLabel(e.target.value)}
+                />
+                <label htmlFor="newFieldType">Input Type</label>
+                <select 
+                  id="newFieldType" 
+                  value={newFieldType} 
+                  onChange={(e) => setNewFieldType(e.target.value)}
+                >
+                  <option value="text">Text</option>
+                  <option value="number">Number</option>
+                  <option value="date">Date</option>
+                </select>
+                <button type="button" className="btn customise" onClick={handleAddCustomField}>Add Custom Field</button>
+              </div>
+            )}
+
             <div className="button-group">
-              <button type="button" className="btn cancel">Cancel</button>
-              <button type="button" className="btn customise">Customise</button>
-              <button type="submit" className="btn add-employee">Add Product</button>
+              <button type="button" className="btn customise" onClick={() => setShowCustomFieldForm(!showCustomFieldForm)}>
+                {showCustomFieldForm ? 'Cancel' : 'Add Custom Field'}
+              </button>
+              <button type="submit" className="btn add-product">Add Product</button>
             </div>
           </form>
         </div>
