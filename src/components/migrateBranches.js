@@ -10,7 +10,6 @@ const firebaseConfig = {
     messagingSenderId: "180970125349",
     appId: "1:180970125349:web:a204e0c73d0b39a521a7cc",
     measurementId: "G-BLSYY0G1BM"
-  
 };
 
 // Initialize Firebase and Firestore
@@ -19,21 +18,21 @@ const db = getFirestore(app);
 
 const migrateBranchIds = async () => {
   try {
-    const querySnapshot = await getDocs(collection(db, 'products'));
+    const querySnapshot = await getDocs(collection(db, 'bookings'));
 
     querySnapshot.forEach(async (docSnapshot) => {
-      const productData = docSnapshot.data();
-      const productCode = productData.productCode;
+      const bookingData = docSnapshot.data();
+      const bookingId = bookingData.bookingId;
 
-      // If the branchCode exists, migrate the document
-      if (productCode) {
+      // Check if branchCode exists in bookingData
+      if (bookingData.branchCode) {  // Corrected the if condition
         // Set the new document with branchCode as the ID
-        await setDoc(doc(db, 'products', productCode), productData);
+        await setDoc(doc(db, 'bookings', bookingId), bookingData);
 
         // Optionally delete the old document with the auto-generated ID
-        await deleteDoc(doc(db, 'products', docSnapshot.id));
+        await deleteDoc(doc(db, 'bookings', docSnapshot.id));
 
-        console.log(`Migrated branch with code: ${productCode}`);
+        console.log(`Migrated branch with code: ${bookingId}`);
       }
     });
 

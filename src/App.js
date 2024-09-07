@@ -28,7 +28,7 @@ import AddUser from './components/UserDashboard/Adduser';
 import AddProduct from './components/Product/AddProduct';
 import ProductDashboard from './components/Product/Product';
 import CheckAvailability from './components/UserDashboard/Availability/Availability';
-
+import Booking from './components/UserDashboard/Availability/Booking';
 
 const App = () => (
   <UserProvider>
@@ -61,7 +61,7 @@ const App = () => (
       <Route path="/adduser" element={<AddUser />} />
       <Route path="/addproduct" element={<AddProduct />} />
       <Route path="/productdashboard" element={<ProductDashboard />} />
-      <Route path="/usersidebar/availability" element={<BookProduct />} />
+      <Route path="/usersidebar/availability" element={<Booking />} />
       
       
 

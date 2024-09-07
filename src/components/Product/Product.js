@@ -199,7 +199,7 @@ const ProductDashboard = () => {
                   <th>Brand Name</th>
                   <th>Description</th>
                   <th>Quantity</th>
-                  <th>Price</th>
+                  <th>Rent</th>
                   <th>Deposit</th>
                   {/* Dynamically add custom field headers */}
                   {customFields.map((field, index) => (

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './Addproduct.css';
 import UserHeader from '../UserDashboard/UserHeader';
 import { db } from '../../firebaseConfig'; // Ensure firebaseConfig is correctly set up
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, doc, addDoc, setDoc } from 'firebase/firestore'; // Import setDoc for custom document ID
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import UserSidebar from '../UserDashboard/UserSidebar';
 import { useUser } from '../Auth/UserContext'; // Access user data from context
@@ -19,7 +19,6 @@ function AddProduct() {
   const [images, setImages] = useState([]); // Handle multiple images
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [branchCode, setBranchCode] = useState(''); // Store branch code
-
   const [customFields, setCustomFields] = useState([]); // Store custom fields
   const [showCustomFieldForm, setShowCustomFieldForm] = useState(false); // Toggle form visibility
   const [newFieldLabel, setNewFieldLabel] = useState(''); // New field label
@@ -29,26 +28,20 @@ function AddProduct() {
   const { userData } = useUser(); // Get user data from context
   const navigate = useNavigate(); // Initialize navigate
 
-
-  // Set branchCode based on user data if available
   useEffect(() => {
     if (userData && userData.branchCode) {
       setBranchCode(userData.branchCode);
     }
-    
   }, [userData]);
 
-  // Handle image file selection
   const handleImageChange = (e) => {
     setImages(Array.from(e.target.files)); // Convert FileList to an array
   };
 
-  // Toggle sidebar visibility
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
-  // Handle adding a custom field
   const handleAddCustomField = () => {
     if (newFieldLabel) {
       setCustomFields([...customFields, { label: newFieldLabel, type: newFieldType }]);
@@ -58,49 +51,49 @@ function AddProduct() {
     }
   };
 
-  // Handle deleting a custom field
   const handleDeleteCustomField = (index) => {
     const updatedCustomFields = customFields.filter((_, i) => i !== index);
     setCustomFields(updatedCustomFields);
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      // Reference to Firebase Storage
       const storage = getStorage();
       const imageUrls = [];
 
-      // If an image was selected, upload it
       for (const image of images) {
         const storageRef = ref(storage, `products/${image.name}`);
         await uploadBytes(storageRef, image);
         const imageUrl = await getDownloadURL(storageRef);
-        imageUrls.push(imageUrl); // Save each image URL
+        imageUrls.push(imageUrl);
       }
 
-      // Collect all the data including custom field values
       const productData = {
         productName,
         brandName,
-        quantity: parseInt(quantity, 10), // Convert quantity to a number
-        price: parseFloat(price),         // Convert price to a float
-        deposit: parseFloat(deposit),     // Convert deposit to a float
+        quantity: parseInt(quantity, 10),
+        price: parseFloat(price),
+        deposit: parseFloat(deposit),
         productCode,
         description,
-        imageUrls,                            // Save the image URL in Firestore
-        branchCode,                       // Store the branch code with the product
-        customFields: customFieldValues  // Save custom field values
+        imageUrls,
+        branchCode,
+        customFields: customFieldValues,
       };
 
-      await addDoc(collection(db, 'products',productCode), productData);
+      // Use setDoc to explicitly set the document ID as productCode
+      const productRef = doc(collection(db, 'products'), productCode);
+      await setDoc(productRef, productData);
 
-      alert('Product added successfully!');
+      // Add an empty bookings sub-collection
+      await addDoc(collection(productRef, 'bookings'), {}); // Initially empty sub-collection
 
+      alert('Product and bookings added successfully!');
       navigate('/productdashboard');
-      // Optionally, reset the form here except custom fields
+      
+      // Reset form
       setProductName('');
       setBrandName('');
       setQuantity('');
@@ -108,15 +101,14 @@ function AddProduct() {
       setDeposit('');
       setProductCode('');
       setDescription('');
-      setImages([]); // Clear images;
-      setCustomFieldValues({}); // Clear custom field values but keep the fields
+      setImages([]);
+      setCustomFieldValues({});
 
     } catch (error) {
       console.error('Error adding product: ', error);
       alert('Failed to add product');
     }
   };
-
   return (
     <div className='add-product-container'>
       <UserHeader onMenuClick={toggleSidebar} />
