@@ -12,6 +12,7 @@ function AddProduct() {
   const [productName, setProductName] = useState('');
   const [brandName, setBrandName] = useState('');
   const [quantity, setQuantity] = useState('');
+  
   const [price, setPrice] = useState('');
   const [deposit, setDeposit] = useState('');
   const [productCode, setProductCode] = useState('');
@@ -24,6 +25,7 @@ function AddProduct() {
   const [newFieldLabel, setNewFieldLabel] = useState(''); // New field label
   const [newFieldType, setNewFieldType] = useState('text'); // New field input type
   const [customFieldValues, setCustomFieldValues] = useState({}); // Store values for custom fields
+  const [bookingId, setBookingId] = useState(''); // State for booking ID
 
   const { userData } = useUser(); // Get user data from context
   const navigate = useNavigate(); // Initialize navigate
@@ -88,7 +90,10 @@ function AddProduct() {
       await setDoc(productRef, productData);
 
       // Add an empty bookings sub-collection
-      await addDoc(collection(productRef, 'bookings'), {}); // Initially empty sub-collection
+       // Initially empty sub-collection
+       
+        await setDoc(doc(collection(productRef, 'bookings'), bookingId), {}); // Empty document with bookingId as ID
+      
 
       alert('Product and bookings added successfully!');
       navigate('/productdashboard');
