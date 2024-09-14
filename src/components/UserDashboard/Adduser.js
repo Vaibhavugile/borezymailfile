@@ -3,6 +3,7 @@ import { addDoc, collection, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebaseConfig'; // Firebase config
 import { useNavigate } from 'react-router-dom'; // Navigation
 import { useUser } from '../Auth/UserContext'; // Access user data from context
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import './Adduser.css';
 
 const AddUser = () => {
@@ -21,6 +22,8 @@ const AddUser = () => {
   const [userLimitReached, setUserLimitReached] = useState(false); // State to track user limit
 
   const navigate = useNavigate(); // For navigation
+  const [isActive, setIsActive] = useState(true); // New field for user status
+
 
   // Directly set branchCode if userData is available
   useEffect(() => {
@@ -62,44 +65,48 @@ const AddUser = () => {
     }
 
     // Prepare new user data
-    const newUser = {
-      name,
-      email,
-      salary,
-      contactNumber,
-      password,
-      role,
-      permission,
-      date,
-      isCheckboxChecked,
-      branchCode,
-    };
-
     try {
-      // Add new user to Firestore 'subusers' collection
-      const docRef = await addDoc(collection(db, 'subusers'), newUser);
-      console.log('User added with ID: ', docRef.id);
+      const auth = getAuth();
+      // Create authenticated user with Firebase
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userId = userCredential.user.uid;
 
-      // Fetch the corresponding branch document using branchCode
+      // Prepare new user data to be stored in Firestore
+      const newUser = {
+        userId, // Store the Firebase Auth user ID
+        name,
+        email,
+        salary,
+        contactNumber,
+        password,
+        role,
+        permission,
+        date,
+        isActive, // Set status as active
+        branchCode,
+      };
+
+      // Add new user to Firestore 'subusers' collection
+      await addDoc(collection(db, 'subusers'), newUser);
+      console.log('User added successfully.');
+
+      // Update the branch's user count
       const branchRef = doc(db, 'branches', branchCode);
-      console.log('Branch Reference Path:', branchRef.path); // Debugging
       const branchSnap = await getDoc(branchRef);
 
       if (branchSnap.exists()) {
         const branchData = branchSnap.data();
         const currentUsers = branchData.numberOfUsers || 0;
 
-        // Decrement the number of users in the branch
         await updateDoc(branchRef, {
-          numberOfUsers: Math.max(0, currentUsers - 1), // Ensure the number of users does not go below 0
+          numberOfUsers: Math.max(0, currentUsers - 1), // Ensure user count doesn't go below 0
         });
-
         console.log('Branch user count updated.');
       } else {
         console.error('Branch not found. Branch Code:', branchCode);
       }
 
-      // Reset form fields after submission
+      // Reset form fields
       setName('');
       setEmail('');
       setSalary('');
@@ -108,12 +115,12 @@ const AddUser = () => {
       setRole('');
       setPermission('');
       setDate('');
-      setIsCheckboxChecked(false);
 
+      // Redirect to users list after success
       alert('User added successfully');
-      navigate('/usersidebar/users'); // Redirect to user dashboard after success
+      navigate('/usersidebar/users');
     } catch (error) {
-      console.error('Error adding user: ', error);
+      console.error('Error adding user:', error);
       alert('Failed to add user');
     }
   };
@@ -121,6 +128,7 @@ const AddUser = () => {
   const handleCancel = () => {
     navigate('/usersidebar/users'); // Redirect to user dashboard on cancel
   };
+
 
   return (
     <div className="add-user-container">

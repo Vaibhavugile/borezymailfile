@@ -15,6 +15,10 @@ function Booking() {
   const [isPaymentConfirmed, setIsPaymentConfirmed] = useState(false); // Track if payment is confirmed
   const navigate = useNavigate();
 
+
+
+  
+
   const checkAvailability = async (pickupDateObj, returnDateObj, bookingId) => {
     try {
       const productRef = doc(db, 'products', productCode);
@@ -57,6 +61,9 @@ function Booking() {
           quantity: bookingData.quantity,
         });
       });
+      console.log('Bookings Less:', bookingsLess);  // Log bookings before current booking
+      console.log('Bookings Greater:', bookingsGreater);  // Log bookings after current booking
+  
 
       let availableQuantity = maxAvailableQuantity;
 
@@ -97,6 +104,7 @@ function Booking() {
 
         availableQuantity -= totalOverlapQuantity;
       }
+      console.log('Available Quantity:', availableQuantity);  // Log available quantity
 
       return availableQuantity;
 

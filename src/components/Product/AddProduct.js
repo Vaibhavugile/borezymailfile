@@ -92,7 +92,7 @@ function AddProduct() {
       // Add an empty bookings sub-collection
        // Initially empty sub-collection
        
-        await setDoc(doc(collection(productRef, 'bookings'), bookingId), {}); // Empty document with bookingId as ID
+        await addDoc(doc(collection(productRef, 'bookings'), bookingId), {}); // Empty document with bookingId as ID
       
 
       alert('Product and bookings added successfully!');

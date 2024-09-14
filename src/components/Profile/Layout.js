@@ -26,7 +26,7 @@ const Layout = () => {
             {userData.role === 'Super Admin' ? (
               <li><NavLink to="/superadmin">Super Admin</NavLink></li>
             ) : (
-              <li><NavLink to="/create-user">Create Users</NavLink></li>
+              <li><NavLink to="/usersidebar/users">Create Users</NavLink></li>
             )}
             <li><NavLink to="/transaction">Transaction</NavLink></li>
             <li><NavLink to="/settings">Settings</NavLink></li>

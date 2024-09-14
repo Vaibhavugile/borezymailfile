@@ -9,7 +9,7 @@ import UserSidebar from './UserSidebar';
 import search from '../../assets/Search.png'; // Import search icon
 import downloadIcon from '../../assets/Download.png'; // Import download icon
 import uploadIcon from '../../assets/Upload.png'; // Import upload icon
-import { useUser } from '../Auth/UserContext'; 
+import { useUser } from '../Auth/UserContext';
 
 const UserDashboard = () => {
   const [users, setUsers] = useState([]);
@@ -20,13 +20,12 @@ const UserDashboard = () => {
   const [searchField, setSearchField] = useState('name'); // Search field state
   const [importedData, setImportedData] = useState(null); // Imported data state
   const navigate = useNavigate();
-  const { userData } = useUser(); 
+  const { userData } = useUser();
   const [originalUsers, setOriginalUsers] = useState([]);
 
   useEffect(() => {
     const fetchUsersAndBranchData = async () => {
       try {
-        // Existing code for fetching users and branch data
         const q = query(
           collection(db, 'subusers'),
           where('branchCode', '==', userData.branchCode)
@@ -120,8 +119,6 @@ const UserDashboard = () => {
     handleSearch();
   }, [searchQuery, searchField]);
 
-  // Update handleSearch function to be called on input change
-  
   const exportToCSV = () => {
     const csv = Papa.unparse(users);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -145,12 +142,26 @@ const UserDashboard = () => {
         complete: (result) => {
           const importedUsers = result.data.map(row => ({
             ...row,
-            // Convert date fields if needed
           }));
           setImportedData(importedUsers);
           console.log(importedUsers);
         },
       });
+    }
+  };
+
+  const handleStatusChange = async (id, currentStatus) => {
+    try {
+      const userDocRef = doc(db, 'subusers', id);
+      await updateDoc(userDocRef, {
+        isActive: !currentStatus,
+      });
+
+      setUsers(users.map(user =>
+        user.id === id ? { ...user, isActive: !currentStatus } : user
+      ));
+    } catch (error) {
+      console.error('Error updating user status:', error);
     }
   };
 
@@ -185,7 +196,6 @@ const UserDashboard = () => {
               placeholder={`Search by ${searchField.replace(/([A-Z])/g, ' $1')}`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              
             />
           </div>
           <div className="action-buttons">
@@ -222,6 +232,7 @@ const UserDashboard = () => {
                   <th>Contact Number</th>
                   <th>Role</th>
                   <th>Permission</th>
+                  <th>Status</th> {/* Updated Column */}
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -235,17 +246,23 @@ const UserDashboard = () => {
                     <td>{user.role}</td>
                     <td>{user.permission}</td>
                     <td>
-                      <div className="action-buttons">
-                        <button onClick={() => handleEdit(user.id)}>Edit</button>
-                        <button onClick={() => handleDelete(user.id)}>Delete</button>
-                      </div>
+                      <span
+                        className={`status ${user.isActive ? 'active' : 'inactive'}`}
+                        onClick={() => handleStatusChange(user.id, user.isActive)}
+                      >
+                        {user.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td>
+                      <button onClick={() => handleEdit(user.id)}>Edit</button>
+                      <button onClick={() => handleDelete(user.id)}>Delete</button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           ) : (
-            <p>No users found</p>
+            <p>No users found.</p>
           )}
         </div>
       </div>

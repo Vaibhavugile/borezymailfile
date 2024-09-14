@@ -29,7 +29,7 @@ import AddProduct from './components/Product/AddProduct';
 import ProductDashboard from './components/Product/Product';
 import CheckAvailability from './components/UserDashboard/Availability/Availability';
 import Booking from './components/UserDashboard/Availability/Booking';
-
+import EditUser from './components/UserDashboard/EditUser';
 const App = () => (
   <UserProvider>
   <Router>
@@ -62,6 +62,7 @@ const App = () => (
       <Route path="/addproduct" element={<AddProduct />} />
       <Route path="/productdashboard" element={<ProductDashboard />} />
       <Route path="/usersidebar/availability" element={<Booking />} />
+      <Route path="/edituser/:id" element={<EditUser />} />
       
       
 

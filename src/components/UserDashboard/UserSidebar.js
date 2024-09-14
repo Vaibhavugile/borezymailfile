@@ -16,6 +16,16 @@ const UserSidebar = ({isOpen}) => {
         <ul>
           <li className="sidebar-greeting1">Welcome User,</li>
           <li className="sidebar-greeting">Leads</li>
+
+          <li className={`sidebar-link ${location.pathname === '/usersidebar/billing' ? 'active' : ''}`}>
+            <Link to="/usersidebar/billing" >
+             <img src={calender} alt="Availability" className="icon" />  Billing </Link>
+          </li>
+
+          <li className={`sidebar-link ${location.pathname === '/usersidebar/dashboard' ? 'active' : ''}`}>
+            <Link to="/usersidebar/dashboard" >
+             <img src={calender} alt="Availability" className="icon" />  Dashboard </Link>
+          </li>
           
           <li className={`sidebar-link ${location.pathname === '/usersidebar/availability' ? 'active' : ''}`}>
             <Link to="/usersidebar/availability" >
@@ -33,10 +43,16 @@ const UserSidebar = ({isOpen}) => {
             <Link to="/productdashboard"> 
             <img src={product} alt="Product" className="icon" />Product</Link>
           </li>
-          <li className={`sidebar-link ${location.pathname === '/usersidebar/users' ? 'active' : ''}`}>
-            <Link to="/usersidebar/users">
-            <img src={user} alt="Users" className="icon" />Users</Link>
+          <br></br>
+          <br></br>
+          <br></br>
+          <br></br>
+          <li className={`sidebar-link ${location.pathname === '/report' ? 'active' : ''}`}>
+            <Link to="/report"> 
+            <img src={product} alt="Product" className="icon" />Report</Link>
           </li>
+          
+          
           
           
         </ul>
