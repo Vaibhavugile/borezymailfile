@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { db } from '../../../firebaseConfig';
 import { collection, doc, addDoc, getDoc, query, getDocs, orderBy, writeBatch, where } from 'firebase/firestore';
+import { getStorage, ref, getDownloadURL,listAll } from "firebase/storage"; 
 import { useNavigate } from 'react-router-dom';
+import UserHeader from '../../UserDashboard/UserHeader';
+import UserSidebar from '../../UserDashboard/UserSidebar';
 
+import "../Availability/Booking.css"
 function Booking() {
   const [productCode, setProductCode] = useState('');
   const [pickupDate, setPickupDate] = useState('');
@@ -10,14 +14,67 @@ function Booking() {
   const [quantity, setQuantity] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [isFormVisible, setIsFormVisible] = useState(false); 
+  const [isAvailabilityFormVisible, setIsAvailabilityFormVisible] = useState(true); 
+  const [isAvailability1FormVisible, setIsAvailability1FormVisible] = useState(false); 
+  
+  const [visibleForm, setVisibleForm] = useState(''); // Track visible form by its id
   const [userDetails, setUserDetails] = useState({ name: '', email: '', contact: '' });
   const [receipt, setReceipt] = useState(null); // Store receipt details
   const [isPaymentConfirmed, setIsPaymentConfirmed] = useState(false); // Track if payment is confirmed
+  const [productImageUrl, setProductImageUrl] = useState('');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [availableQuantity, setAvailableQuantity] = useState(null);
+  const [deposit, setDeposit] = useState(0); // Add a state for deposit
+  const [price, setPrice] = useState(0); // Add a state for price
+  const [numDays, setNumDays] = useState(0); // Number of days between pickup and return
+
   const navigate = useNavigate();
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
 
 
 
+  const fetchProductImage = async (code) => {
+    try {
+      // Reference to the product document in Firestore
+      const productRef = doc(db, 'products', code);
+      const productDoc = await getDoc(productRef);
   
+      if (productDoc.exists()) {
+        const productData = productDoc.data();
+        const imagePath = productData.imageUrls[0];
+        setPrice(productData.price); // Set product price from Firestore
+        setDeposit(productData.deposit);  // Ensure you have an 'imagePath' field in your product document
+  
+        console.log('Image Path:', imagePath); // Log the image path to verify
+  
+        if (imagePath) {
+          const storage = getStorage();
+          const imageRef = ref(storage, imagePath); // Use the image path from Firestore
+  
+          console.log('Image Reference:', imageRef); // Log the image reference
+  
+          const url = await getDownloadURL(imageRef);
+          setProductImageUrl(url);
+        } else {
+          setProductImageUrl(''); // No image path found in Firestore
+        }
+      } else {
+        setProductImageUrl(''); // Product not found
+      }
+    } catch (error) {
+      console.error('Error fetching product image: ', error);
+      setProductImageUrl(''); // Clear image URL on error
+    }
+  };
+  
+  useEffect(() => {
+    console.log('Product Code:', productCode); // Log the product code
+    if (productCode) {
+      fetchProductImage(productCode);
+    }
+  }, [productCode]);
 
   const checkAvailability = async (pickupDateObj, returnDateObj, bookingId) => {
     try {
@@ -31,6 +88,9 @@ function Booking() {
 
       const productData = productDoc.data();
       const maxAvailableQuantity = productData.quantity || 0;
+      
+      
+      
 
       const bookingsRef = collection(productRef, 'bookings');
       const qLess = query(bookingsRef, where('bookingId', '<', bookingId), orderBy('bookingId', 'asc'));
@@ -114,6 +174,7 @@ function Booking() {
       return 0;
     }
   };
+  
 
   const getNextBookingId = async (pickupDateObj) => {
     try {
@@ -169,6 +230,7 @@ function Booking() {
       totalPrice,
       deposit,
       grandTotal: totalPrice + deposit,
+
     };
   };
 
@@ -187,13 +249,14 @@ function Booking() {
       const bookingId = await getNextBookingId(pickupDateObj);
 
       const availableQuantity = await checkAvailability(pickupDateObj, returnDateObj, bookingId);
-
+      setAvailableQuantity(availableQuantity); // Update state with available quantity
       if (availableQuantity >= quantity) {
-        setIsFormVisible(true);
+        setVisibleForm('bookingDetails'); // Set the visible form to 'bookingDetails' when the form is valid
       } else {
         setErrorMessage(`Not enough product available. Only ${availableQuantity} units left for the selected dates.`);
-        setIsFormVisible(false);
+        // Collapse form if there's an error
       }
+
     } catch (error) {
       console.error('Error processing booking:', error);
       setErrorMessage('Failed to process booking. Please try again.');
@@ -206,7 +269,8 @@ function Booking() {
     try {
       const pickupDateObj = new Date(pickupDate);
       const returnDateObj = new Date(returnDate);
-      const numDays = (returnDateObj - pickupDateObj) / (1000 * 60 * 60 * 24);
+      const days = ((returnDateObj - pickupDateObj) / (1000 * 60 * 60 * 24)); // Calculate number of days
+      setNumDays(days);
 
       const productRef = doc(db, 'products', productCode);
       const productDoc = await getDoc(productRef);
@@ -230,9 +294,19 @@ function Booking() {
         price,
         totalCost: totalCost.totalPrice,
         deposit: totalCost.deposit,
+        
       });
 
-      setReceipt(totalCost);
+      setReceipt({
+        productCode,
+        productImageUrl,
+        deposit,
+        price,
+        numDays,
+        quantity,
+        totalPrice: totalCost.totalPrice,
+        grandTotal: totalCost.grandTotal,
+      });
 
     } catch (error) {
       console.error('Error confirming booking:', error);
@@ -267,12 +341,30 @@ function Booking() {
       setErrorMessage('Failed to confirm payment. Please try again.');
     }
   };
+  const toggleAvailabilityForm = () => {
+    setIsAvailabilityFormVisible(!isAvailabilityFormVisible);
+  };
+
+  const toggleAvailability1Form = () => {
+    setIsAvailability1FormVisible(!isAvailability1FormVisible);
+  };
 
   return (
-    <div className="booking-container">
-      <h1>Create Booking</h1>
+    <div className="booking-container1">
+      <UserHeader onMenuClick={toggleSidebar} />
+     <div className='issidebar'>
+     <UserSidebar isOpen={isSidebarOpen} />
+     
+      <h1>Check Availability</h1>
+      <button onClick={toggleAvailabilityForm} className='availability-toogle-button'>
+          {isAvailabilityFormVisible ? 'Hide Availability Form' : 'Show Availability Form'}
+      </button>
+      
+      {isAvailabilityFormVisible  && (
+      
+
       <form onSubmit={handleSubmit}>
-        <div className="form-group">
+        <div className="form-group1" style={{ marginTop: '80px' }}>
           <label>Product Code</label>
           <input
             type="text"
@@ -281,25 +373,25 @@ function Booking() {
             required
           />
         </div>
-        <div className="form-group">
+        <div className="form-group1">
           <label>Pickup Date</label>
           <input
-            type="date"
+            type="datetime-local"
             value={pickupDate}
             onChange={(e) => setPickupDate(e.target.value)}
             required
           />
         </div>
-        <div className="form-group">
+        <div className="form-group1">
           <label>Return Date</label>
           <input
-            type="date"
+            type="datetime-local"
             value={returnDate}
             onChange={(e) => setReturnDate(e.target.value)}
             required
           />
         </div>
-        <div className="form-group">
+        <div className="form-group1">
           <label>Quantity</label>
           <input
             type="number"
@@ -308,15 +400,38 @@ function Booking() {
             required
           />
         </div>
-        <button type="submit">Check Availability</button>
+        <div className="product-image-container1">
+        {productImageUrl ? (
+          <img src={productImageUrl} alt="Product" className="product-image1" />
+        ) : (
+          <p>No image available</p>
+        )}
+      </div>
+        <button type="submit" className='checkavailability'>Check Availability</button>
+        <div className="available-quantity-display">
+        {availableQuantity !== null && (
+          <p>Available Quantity: {availableQuantity}</p>
+        )}
+      </div>
       </form>
+      )}
+      
 
       {errorMessage && <p className="error-message">{errorMessage}</p>}
 
-      {isFormVisible && (
+      
+
+      <button onClick={toggleAvailability1Form} className='availability1-toogle-button'>
+          {isAvailability1FormVisible ? 'Hide Customer Details Form' : 'Show Customer Detail  Form'}
+      </button>
+      <h2>Customer Details</h2>
+     
+      {visibleForm === 'bookingDetails' && isAvailability1FormVisible &&  (
+       
         <form onSubmit={handleBookingConfirmation}>
-          <h2>Customer Details</h2>
-          <div className="form-group">
+         
+          
+          <div className="form-group1" style={{ marginTop: '30px' }} >
             <label>Name</label>
             <input
               type="text"
@@ -325,7 +440,7 @@ function Booking() {
               required
             />
           </div>
-          <div className="form-group">
+          <div className="form-group1">
             <label>Email</label>
             <input
               type="email"
@@ -334,7 +449,7 @@ function Booking() {
               required
             />
           </div>
-          <div className="form-group">
+          <div className="form-group1">
             <label>Contact</label>
             <input
               type="text"
@@ -343,26 +458,55 @@ function Booking() {
               required
             />
           </div>
-          <button type="submit">Confirm Booking</button>
+          <button type="submit" className='confirm-booking-button'>Confirm Booking</button>
         </form>
       )}
 
       {receipt && (
         <div className="receipt-container">
-          <h2>Payment Receipt</h2>
-          <p>Deposit: ${receipt.deposit}</p>
-          <p>Total Price: ${receipt.totalPrice}</p>
-          <p>Grand Total: ${receipt.grandTotal}</p>
+          <h2>Booking Receipt</h2>
+          <div className="receipt-details">
+            <div className="receipt-row">
+              <div className="receipt-column">
+                <strong>Product Image:</strong>
+                {productImageUrl && (
+                  <img src={productImageUrl} alt="Product" style={{ width: '100px', height: '100px' }} />
+                )}
+              </div>
+              <div className="receipt-column">
+                <strong>Product Code:</strong> {receipt.productCode}
+              </div>
+              <div className="receipt-column">
+                <strong>Deposit:</strong> ₹{receipt.deposit}
+              </div>
+              <div className="receipt-column">
+                <strong>Price per Day:</strong> ₹{receipt.price}
+              </div>
+              <div className="receipt-column">
+                <strong>Quantity:</strong> {receipt.quantity}
+              </div>
+              <div className="receipt-column">
+                <strong>Number of Days:</strong> {receipt.numDays}
+              </div>
+              <div className="receipt-column">
+                <strong>Total Price:</strong> ₹{receipt.totalPrice}
+              </div>
+              <div className="receipt-column">
+                <strong>Grand Total:</strong> ₹{receipt.grandTotal}
+              </div>
+              {!isPaymentConfirmed && (
+                <button onClick={handleConfirmPayment}>Confirm Payment</button>
+             )}
 
-          {!isPaymentConfirmed && (
-            <button onClick={handleConfirmPayment}>Confirm Payment</button>
-          )}
 
-          {isPaymentConfirmed && (
-            <p className="success-message">Payment confirmed! Your booking has been saved.</p>
-          )}
+              {isPaymentConfirmed && (
+               <p className="success-message">Payment confirmed! Your booking has been saved.</p>
+               )}
+            </div>
+          </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

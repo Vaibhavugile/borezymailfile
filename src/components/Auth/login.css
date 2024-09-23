@@ -1,28 +1,4 @@
-/* login.css */
 
-body {
-  margin: 0;
-  font-family: 'Arial', sans-serif;
-  overflow: hidden; /* Prevent scrolling */
-}
-
-html, body {
-  height: 100%; /* Ensure full height */
-}
-
-.login-container {
-  position: relative;
-  display: flex;
-  height: 100vh;
-  flex-direction: row;
-  overflow: hidden; /* Prevent scrolling */
-}
-
-.background-image {
-  width: 55%;
-  height: 100%;
-  object-fit: cover; /* Ensures proper aspect ratio */
-}
 
 .logo-container {
   position: absolute;
@@ -34,138 +10,106 @@ html, body {
 .logo-image {
   width: 200px;
 }
-
-.welcome-text {
-  position: absolute;
-  bottom: 32px;
-  left: 20px;
-  font-size: 3.75rem;
-  color: white;
+.sign-in-container {
+  display: flex;
+  height: 100vh;
+  font-family: Arial, sans-serif;
 }
 
-.form-container {
-  position: absolute;
-  top: 50%;
-  left: 77%;
-  transform: translate(-50%, -50%);
-  width: 70%; /* Adjusted width */
-  max-width: 300px; /* Adjusted max-width */
+.sign-in-left {
+  flex: 0.6; /* 60% width */
+  background: url('C:/Users/vaibh/Downloads/Borezy-main new/Borezy-main/src/assets/bg-abstract.png') no-repeat center center;
+  background-size: cover;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  text-align: center;
+  align-items: center;
+  color: white;
   padding: 20px;
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1); /* Adjusted shadow */
+}
+
+.sign-in-left .logo {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 2rem;
+}
+
+.sign-in-left h1 {
+  font-size: 3rem;
+  color: #ffff;
+}
+
+.sign-in-right {
+  flex: 0.4; /* 40% width */
   background: white;
-  overflow: hidden; /* Prevent scrolling inside form */
-}
-
-.title {
-  font-size: 1.75rem; /* Adjusted font size */
-}
-
-.subtitle {
-  font-size: 1rem; /* Adjusted font size */
-  color: #797979;
-  margin-bottom: 15px; /* Adjusted margin */
-}
-
-.login-form {
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  padding: 50px;
 }
 
-.form-group {
-  margin-bottom: 12px; /* Adjusted margin */
+.sign-in-right h2 {
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+.sign-in-right p {
+  color: #7f7f7f;
+  margin-bottom: 20px;
+}
+
+.input-group {
+  margin-bottom: 15px;
+}
+
+.input-group label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
 }
 
 .remember-me {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px; /* Adjusted margin */
+  margin-bottom: 15px;
+}
+
+.remember-me input {
+  margin-right: 10px;
 }
 
 .forgot-password {
-  text-align: center;
-  color: #797979;
-  margin-bottom: 15px; /* Adjusted margin */
+  color: #0066cc;
+  text-decoration: none;
+  margin-bottom: 20px;
+  display: block;
 }
 
-.error-message {
-  color: red;
-  font-size: 0.875rem;
-  margin-top: 8px; /* Adjusted margin */
-  text-align: center;
+.forgot-password:hover {
+  text-decoration: underline;
 }
 
-/* Responsive Adjustments */
-@media (max-width: 1024px) {
-  .logo-container {
-    top: 15px;
-    left: 15px;
-  }
-
-  .welcome-text {
-    font-size: 0.85rem;
-    bottom: 20px;
-  }
-
-  .form-container {
-    top: 45%; /* Adjusted position */
-    left: 50%;
-    transform: translate(-50%, -45%); /* Adjusted transformation */
-  }
+.sign-in-button {
+  width: 100%;
+  padding: 10px;
+  background-color: #0066cc;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: bold;
 }
 
-@media (max-width: 768px) {
-  .login-container {
-    flex-direction: column;
-  }
-
-  .background-image {
-    width: 100%;
-    height: auto; /* Adjusted height for better aspect ratio */
-  }
-
-  .form-container {
-    width: 80%; /* Adjusted width for smaller screens */
-    max-width: 350px; /* Adjusted max-width */
-  }
-
-  .title {
-    text-align: center;
-    font-size: 1.5rem; /* Adjusted font size */
-  }
-
-  .subtitle {
-    text-align: center;
-    font-size: 0.875rem; /* Adjusted font size */
-  }
-
-  .welcome-text {
-    position: static;
-    text-align: center;
-    margin-bottom: 10px;
-  }
+.sign-in-button:hover {
+  background-color: #004da8;
 }
 
-@media (max-width: 480px) {
-  .title {
-    font-size: 1.5rem; /* Adjusted font size */
-  }
 
-  .subtitle {
-    font-size: 1.25rem; /* Adjusted font size */
-  }
-
-  .logo-image {
-    width: 150px;
-  }
-
-  .form-container {
-    padding: 15px;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); /* Adjusted shadow */
-    width: 60%; /* Adjusted width */
-  }
-}

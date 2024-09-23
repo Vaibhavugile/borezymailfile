@@ -1,0 +1,226 @@
+/* Container for the form group and the image */
+.booking-container1 {
+   display: flex;
+    flex-direction: row; /* Ensures the form and image are side by side */
+    width: 100%;
+    height: 100vh; /* Full viewport height */
+    box-sizing: border-box;
+    align-items: flex-start; /* Aligns items at the top */
+    justify-content: space-between; /* Provides space between form and image */
+  }
+  .booking-container1 h1 {
+    position: absolute;
+    width: 182px;
+    height: 26px;
+    left: 280px;
+    top: 100px;
+
+    font-family: 'Public Sans';
+    font-style: normal;
+    font-weight: 500;
+    font-size: 22px;
+    line-height: 26px;
+    /* identical to box height */
+
+    color: #000000;
+
+  }
+  h2 {
+    position: absolute;
+    width: 182px;
+    height: 26px;
+    left: 280px;
+    margin-top: -30px;
+
+    font-family: 'Public Sans';
+    font-style: normal;
+    font-weight: 500;
+    font-size: 22px;
+    line-height: 26px;
+    /* identical to box height */
+
+    color: #000000;
+
+  }
+
+  h3 {
+    position: absolute;
+    width: 182px;
+    height: 26px;
+    left: 280px;
+    margin-top: -50px;
+
+    font-family: 'Public Sans';
+    font-style: normal;
+    font-weight: 500;
+    font-size: 22px;
+    line-height: 26px;
+    /* identical to box height */
+
+    color: #000000;
+
+  }
+
+  .availability-toogle-button {
+    background-color: #FFFFFF; /* Bootstrap primary color */
+    color: #000000; /* Text color */
+    border: none; /* No border */
+    border-radius: 5px; /* Rounded corners */
+    padding: 10px 20px; /* Padding for the button */
+    cursor: pointer; /* Pointer cursor on hover */
+    font-size: 16px; /* Font size */
+    margin-top: 100px;
+    width: 1200px;
+    margin-left: 250px; /* Space above the button */
+}
+
+.availability-toogle-button:hover {
+    background-color: #FFFFFF; /* Darker shade on hover */
+    transition: background-color 0.3s ease; /* Smooth transition */
+}
+
+.availability1-toogle-button {
+    background-color: #FFFFFF; /* Bootstrap primary color */
+    color: black; /* Text color */
+    border: none; /* No border */
+    border-radius: 5px; /* Rounded corners */
+    padding: 10px 20px; /* Padding for the button */
+    cursor: pointer; /* Pointer cursor on hover */
+    font-size: 16px; /* Font size */
+    margin-top: 30px;
+    width: 1200px;
+    margin-left:250px ; /* Space above the button */
+}
+
+.availability1-toogle-button:hover {
+    background-color: #FFFFFF; /* Darker shade on hover */
+    transition: background-color 0.3s ease; /* Smooth transition */
+}
+  
+  /* Form group section */
+  .form-group1 {
+    
+   margin-left: 280px;
+    width:700px;
+   /* Add some padding for spacing */
+    box-sizing: border-box;
+    padding-top: 20px;
+    background-color: #FFFFFF;
+   
+   
+    
+     /* You 
+     can change the background color as needed */
+  }
+  .form-group1 input {
+    background: #EEEEEE;
+    border-radius: 5px;
+    height: 10px;
+    width:200px
+  }
+  
+  /* Image section */
+  .product-image-container1 {
+   
+   margin-top: -300px;
+   margin-left: 1100px;
+   height: 300px;
+   width: 300px;
+   
+ 
+     /* Replace with your image URL */
+    background-size: cover; /* Ensures the image covers the area */
+    background-position: center;
+    box-sizing: border-box;
+  }
+  .product-image1{
+    width: 300px;
+    height: 300px;
+    border-radius: 20px;
+  }
+  /* Optional: Styling the form inside the form group */
+  .form-group1 form {
+
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Space between form fields */
+  }
+
+  .form-group1 label{
+    font-family: 'Public Sans';
+    font-style:normal;
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 19px;
+    /* identical to box height */
+
+    color: #000000;
+
+  }
+  
+  /* Styling form inputs */
+  .form-group1 input,
+  .form-group1 button {
+    width: 100%;
+   
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+  }
+  
+  /* Styling the button */
+  .form-group1 button {
+  
+  
+    cursor: pointer;
+    margin-left: 400px;
+
+    
+   background: #008101;
+   border-radius: 5px;
+  }
+  
+  .form-group1 button:hover {
+    background-color: #0056b3;
+  }
+  
+  .checkavailability{
+    cursor: pointer;
+   
+    color: #FFFFFF;
+    position: absolute;
+    width: 265px;
+    height: 42px;
+    left: 588px;
+    top: 548px;
+
+    background: #008101;
+    border-radius: 5px;
+    border-color: #FFFFFF;
+
+    
+  }
+  .available-quantity-display{
+    margin-left: 300px;
+  }
+
+  .confirm-booking-button{
+    cursor: pointer;
+   
+    color: #FFFFFF;
+    position: absolute;
+    width: 265px;
+    height: 42px;
+    left: 588px;
+    margin-top: 70px;
+
+    background: #008101;
+    border-radius: 5px;
+    border-color: #FFFFFF;
+
+  }
+  .receipt-container1{
+    margin-top: 200px;
+     margin-left: 400px;
+  }

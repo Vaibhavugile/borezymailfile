@@ -30,6 +30,9 @@ import ProductDashboard from './components/Product/Product';
 import CheckAvailability from './components/UserDashboard/Availability/Availability';
 import Booking from './components/UserDashboard/Availability/Booking';
 import EditUser from './components/UserDashboard/EditUser';
+import ClientLeadsDashboard from './components/UserDashboard/Clienleads/CleadsDashboard';
+import ClientLeads from './components/UserDashboard/Clienleads/Cleads';
+
 const App = () => (
   <UserProvider>
   <Router>
@@ -63,8 +66,8 @@ const App = () => (
       <Route path="/productdashboard" element={<ProductDashboard />} />
       <Route path="/usersidebar/availability" element={<Booking />} />
       <Route path="/edituser/:id" element={<EditUser />} />
-      
-      
+      <Route path="/usersidebar/leads" element={<ClientLeadsDashboard/>}/>
+      <Route path="/addlead" element ={<ClientLeads/>}/>
 
       <Route path="/" element={<Layout />}>
       <Route path="superadmin" element={<CreateSuperAdmin />} /> {/* Route for the LeadForm */}

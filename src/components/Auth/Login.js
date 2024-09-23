@@ -106,23 +106,27 @@ const Login = () => {
   };
 
   return (
-    <div className="login-container">
-      <img src={BgAbstract} alt="Background" className="background-image" />
+    <div className="sign-in-container">
+      <div className="sign-in-left">
+        
+      
+       <h1>Welcome Back!</h1>
 
+      </div>
+
+     
+      
       <div className="logo-container">
         <img src={Logo} alt="Logo" className="logo-image" />
       </div>
 
-      <div className="welcome-text">
-        Welcome <br /> Back!
-      </div>
 
-      <div className="form-container">
-        <div className="title">Sign In</div>
-        <div className="subtitle">Welcome back! Please sign in to your account</div>
+    <div className="sign-in-right">
+      <p>Sign In</p>
+      <p>Welcome back! Please sign in to your account</p>
 
-        <form onSubmit={handleLogin} className="login-form">
-          <div className="form-group">
+        <form onSubmit={handleLogin} >
+          <div className="input-group">
             <TextField
               label="Email ID"
               variant="outlined"
@@ -132,7 +136,7 @@ const Login = () => {
               fullWidth
             />
           </div>
-          <div className="form-group">
+          <div className="input-group">
             <TextField
               label="Password"
               variant="outlined"
@@ -163,7 +167,7 @@ const Login = () => {
 
           <div className="forgot-password">Forgot your password</div>
 
-          <Button fullWidth variant="contained" type="submit" disabled={loading}>
+          <Button className='sign-in-button' fullWidth variant="contained" type="submit" disabled={loading}>
             {loading ? 'Logging in...' : 'Sign In'}
           </Button>
 
