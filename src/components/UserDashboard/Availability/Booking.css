@@ -13,7 +13,7 @@
     width: 182px;
     height: 26px;
     left: 280px;
-    top: 100px;
+    top: 130px;
 
     font-family: 'Public Sans';
     font-style: normal;
@@ -220,7 +220,37 @@
     border-color: #FFFFFF;
 
   }
-  .receipt-container1{
-    margin-top: 200px;
-     margin-left: 400px;
-  }
+  .receipt-container {
+    margin: 250px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    height: 65px;
+}
+
+.receipt-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.receipt-row {
+    display: flex;
+    justify-content: space-between;
+    /* flex-wrap: wrap; */
+    text-align: start;
+    
+}
+
+.receipt-column {
+    flex: 1;
+    min-width: 120px; /* Adjust as needed */
+    padding: 05px;
+    text-align: start;
+}
+
+.receipt-values {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}

@@ -32,7 +32,7 @@ import Booking from './components/UserDashboard/Availability/Booking';
 import EditUser from './components/UserDashboard/EditUser';
 import ClientLeadsDashboard from './components/UserDashboard/Clienleads/CleadsDashboard';
 import ClientLeads from './components/UserDashboard/Clienleads/Cleads';
-
+import SingleComponent from './components/Profile/Profile';
 const App = () => (
   <UserProvider>
   <Router>
@@ -71,7 +71,7 @@ const App = () => (
 
       <Route path="/" element={<Layout />}>
       <Route path="superadmin" element={<CreateSuperAdmin />} /> {/* Route for the LeadForm */}
-      <Route path="profile" element={<Profile />} />
+      <Route path="profile" element={<SingleComponent/>} />
       
     </Route>
     </Routes>

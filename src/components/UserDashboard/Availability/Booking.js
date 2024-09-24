@@ -5,9 +5,10 @@ import { getStorage, ref, getDownloadURL,listAll } from "firebase/storage";
 import { useNavigate } from 'react-router-dom';
 import UserHeader from '../../UserDashboard/UserHeader';
 import UserSidebar from '../../UserDashboard/UserSidebar';
-
+import { useUser } from '../../Auth/UserContext';
 import "../Availability/Booking.css"
 function Booking() {
+
   const [productCode, setProductCode] = useState('');
   const [pickupDate, setPickupDate] = useState('');
   const [returnDate, setReturnDate] = useState('');
@@ -36,6 +37,7 @@ function Booking() {
 
 
   const fetchProductImage = async (code) => {
+    
     try {
       // Reference to the product document in Firestore
       const productRef = doc(db, 'products', code);
@@ -224,15 +226,7 @@ function Booking() {
     }
   };
 
-  const calculateTotalPrice = (price, deposit, numDays, quantity) => {
-    const totalPrice = price * numDays * quantity;
-    return {
-      totalPrice,
-      deposit,
-      grandTotal: totalPrice + deposit,
-
-    };
-  };
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -269,11 +263,22 @@ function Booking() {
     try {
       const pickupDateObj = new Date(pickupDate);
       const returnDateObj = new Date(returnDate);
-      const days = ((returnDateObj - pickupDateObj) / (1000 * 60 * 60 * 24)); // Calculate number of days
-      setNumDays(days);
+      const millisecondsPerDay = 1000 * 60 * 60 * 24;
+      const days = Math.ceil((returnDateObj - pickupDateObj) / millisecondsPerDay); // Use Math.ceil() to round up
+      setNumDays(days); 
+      console.log('Calculated Days:', days);
 
       const productRef = doc(db, 'products', productCode);
       const productDoc = await getDoc(productRef);
+      const calculateTotalPrice = (price, deposit, days, quantity) => {
+        const totalPrice = price * days * quantity;
+        return {
+          totalPrice,
+          deposit,
+          grandTotal: totalPrice + deposit,
+    
+        };
+      };
 
       if (!productDoc.exists()) {
         setErrorMessage('Product not found.');
@@ -283,7 +288,7 @@ function Booking() {
       const productData = productDoc.data();
       const { price, deposit } = productData;
 
-      const totalCost = calculateTotalPrice(price, deposit, numDays, quantity);
+      const totalCost = calculateTotalPrice(price, deposit, days, quantity);
 
       await addDoc(collection(productRef, 'bookings'), {
         bookingId: await getNextBookingId(pickupDateObj),
@@ -302,7 +307,7 @@ function Booking() {
         productImageUrl,
         deposit,
         price,
-        numDays,
+        numDays:days,
         quantity,
         totalPrice: totalCost.totalPrice,
         grandTotal: totalCost.grandTotal,
@@ -355,7 +360,7 @@ function Booking() {
      <div className='issidebar'>
      <UserSidebar isOpen={isSidebarOpen} />
      
-      <h1>Check Availability</h1>
+     
       <button onClick={toggleAvailabilityForm} className='availability-toogle-button'>
           {isAvailabilityFormVisible ? 'Hide Availability Form' : 'Show Availability Form'}
       </button>
@@ -364,6 +369,7 @@ function Booking() {
       
 
       <form onSubmit={handleSubmit}>
+        <h1>Check Availability</h1>
         <div className="form-group1" style={{ marginTop: '80px' }}>
           <label>Product Code</label>
           <input
@@ -424,14 +430,15 @@ function Booking() {
       <button onClick={toggleAvailability1Form} className='availability1-toogle-button'>
           {isAvailability1FormVisible ? 'Hide Customer Details Form' : 'Show Customer Detail  Form'}
       </button>
-      <h2>Customer Details</h2>
+      
      
       {visibleForm === 'bookingDetails' && isAvailability1FormVisible &&  (
        
         <form onSubmit={handleBookingConfirmation}>
+          <h2>Customer Details</h2>
          
           
-          <div className="form-group1" style={{ marginTop: '30px' }} >
+          <div className="form-group1" style={{ marginTop: '80px' }} >
             <label>Name</label>
             <input
               type="text"
@@ -463,48 +470,57 @@ function Booking() {
       )}
 
       {receipt && (
-        <div className="receipt-container">
-          <h2>Booking Receipt</h2>
-          <div className="receipt-details">
-            <div className="receipt-row">
-              <div className="receipt-column">
-                <strong>Product Image:</strong>
-                {productImageUrl && (
-                  <img src={productImageUrl} alt="Product" style={{ width: '100px', height: '100px' }} />
-                )}
-              </div>
-              <div className="receipt-column">
-                <strong>Product Code:</strong> {receipt.productCode}
-              </div>
-              <div className="receipt-column">
-                <strong>Deposit:</strong> ₹{receipt.deposit}
-              </div>
-              <div className="receipt-column">
-                <strong>Price per Day:</strong> ₹{receipt.price}
-              </div>
-              <div className="receipt-column">
-                <strong>Quantity:</strong> {receipt.quantity}
-              </div>
-              <div className="receipt-column">
-                <strong>Number of Days:</strong> {receipt.numDays}
-              </div>
-              <div className="receipt-column">
-                <strong>Total Price:</strong> ₹{receipt.totalPrice}
-              </div>
-              <div className="receipt-column">
-                <strong>Grand Total:</strong> ₹{receipt.grandTotal}
-              </div>
-              {!isPaymentConfirmed && (
-                <button onClick={handleConfirmPayment}>Confirm Payment</button>
-             )}
-
-
-              {isPaymentConfirmed && (
-               <p className="success-message">Payment confirmed! Your booking has been saved.</p>
+       <div className="receipt-container">
+         <h2>Booking Receipt</h2>
+         <div className="receipt-details">
+           <div className="receipt-row">
+               <div className="receipt-column">
+                   <strong>Product Image:</strong>
+                  
+               </div>
+               <div className="receipt-column">
+                   <strong>Product Code:</strong>
+               </div>
+               <div className="receipt-column">
+                   <strong>Deposit:</strong>
+               </div>
+               <div className="receipt-column">
+                   <strong>Price per Day:</strong>
+               </div>
+               <div className="receipt-column">
+                   <strong>Quantity:</strong>
+               </div>
+               <div className="receipt-column">
+                   <strong>Number of Days:</strong>
+               </div>
+               <div className="receipt-column">
+                   <strong>Total Price:</strong>
+               </div>
+               <div className="receipt-column">
+                   <strong>Grand Total:</strong>
+               </div>
+               {!isPaymentConfirmed && (
+                   <button onClick={handleConfirmPayment}>Confirm Payment</button>
                )}
-            </div>
-          </div>
-        </div>
+               {isPaymentConfirmed && (
+                   <p className="success-message">Payment confirmed! Your booking has been saved.</p>
+               )}
+           </div>
+           <div className="receipt-values">
+           
+              <div className="receipt-column">{productImageUrl && (
+                       <img src={productImageUrl} alt="Product" style={{ width: '20px', height: '20px' }} />
+                   )}</div>
+               <div className="receipt-column">{receipt.productCode}</div>
+               <div className="receipt-column">₹{receipt.deposit}</div>
+               <div className="receipt-column">₹{receipt.price}</div>
+               <div className="receipt-column">{receipt.quantity}</div>
+               <div className="receipt-column">{receipt.numDays}</div>
+               <div className="receipt-column">₹{receipt.totalPrice}</div>
+               <div className="receipt-column">₹{receipt.grandTotal}</div>
+           </div>
+       </div>
+   </div>
       )}
       </div>
     </div>
