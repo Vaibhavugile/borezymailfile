@@ -20,6 +20,7 @@ function Booking() {
   
   const [visibleForm, setVisibleForm] = useState(''); // Track visible form by its id
   const [userDetails, setUserDetails] = useState({ name: '', email: '', contact: '' });
+
   const [receipt, setReceipt] = useState(null); // Store receipt details
   const [isPaymentConfirmed, setIsPaymentConfirmed] = useState(false); // Track if payment is confirmed
   const [productImageUrl, setProductImageUrl] = useState('');
@@ -30,13 +31,13 @@ function Booking() {
   const [numDays, setNumDays] = useState(0);
    // Number of days between pickup and return
   const [products, setProducts] = useState([
-    { productCode: '', pickupDate: '', returnDate: '', quantity: '', availableQuantity: null, errorMessage: '', productImageUrl: '' },
+    { productCode: '', pickupDate: '', returnDate: '', quantity: '', availableQuantity: null, errorMessage: '',price:'',deposit:'',},
   ]);
   const navigate = useNavigate();
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
-
+ 
 
   const fetchProductImage = async (productCode, index) => {
     try {
@@ -90,7 +91,8 @@ function Booking() {
     const { productCode, pickupDate, returnDate, quantity } = products[index];
     const pickupDateObj = new Date(pickupDate);
     const returnDateObj = new Date(returnDate);
-    const bookingId = 1234; // Replace with actual booking ID logic if needed
+    const bookingId = await getNextBookingId(pickupDateObj,productCode);
+     // Replace with actual booking ID logic if needed
 
     try {
       const productRef = doc(db, 'products', productCode);
@@ -199,16 +201,23 @@ function Booking() {
 
 
 
-  
-
-  const getNextBookingId = async (pickupDateObj) => {
+  const getNextBookingId = async (pickupDateObj, productCode) => {
     try {
+      // Check if productCode is valid
+      if (!productCode) {
+        throw new Error('Invalid product code');
+      }
+  
+      // Firestore reference to the specific product's bookings
       const productRef = doc(db, 'products', productCode);
       const bookingsRef = collection(productRef, 'bookings');
       const q = query(bookingsRef, orderBy('pickupDate', 'asc'));
+  
       const querySnapshot = await getDocs(q);
-
+  
       const existingBookings = [];
+  
+      // Loop through the query snapshot to gather existing bookings
       querySnapshot.forEach((doc) => {
         const bookingData = doc.data();
         existingBookings.push({
@@ -217,9 +226,13 @@ function Booking() {
           pickupDate: bookingData.pickupDate.toDate(),
           returnDate: bookingData.returnDate.toDate(),
           quantity: bookingData.quantity,
+          
+
+
         });
       });
-
+  
+      // Calculate the next booking ID
       let newBookingId = existingBookings.length + 1;
       for (let i = 0; i < existingBookings.length; i++) {
         if (pickupDateObj < existingBookings[i].pickupDate) {
@@ -227,7 +240,8 @@ function Booking() {
           break;
         }
       }
-
+  
+      // Update existing bookings if necessary
       const batch = writeBatch(db);
       if (newBookingId <= existingBookings.length) {
         existingBookings.forEach((booking, index) => {
@@ -239,8 +253,10 @@ function Booking() {
           }
         });
       }
+  
       await batch.commit();
-
+  
+      // Return the new booking ID for the current product
       return newBookingId;
     } catch (error) {
       console.error('Error getting next booking ID:', error);
@@ -248,127 +264,151 @@ function Booking() {
       return null;
     }
   };
+  
+  
+  
+  
 
   
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    try {
-      const pickupDateObj = new Date(pickupDate);
-      const returnDateObj = new Date(returnDate);
-
-      if (pickupDateObj >= returnDateObj) {
-        setErrorMessage('Return date must be after pickup date.');
-        return;
-      }
-
-      const bookingId = await getNextBookingId(pickupDateObj);
-
-      const availableQuantity = await checkAvailability(pickupDateObj, returnDateObj, bookingId);
-      setAvailableQuantity(availableQuantity); // Update state with available quantity
-      if (availableQuantity >= quantity) {
-        setVisibleForm('bookingDetails'); // Set the visible form to 'bookingDetails' when the form is valid
-      } else {
-        setErrorMessage(`Not enough product available. Only ${availableQuantity} units left for the selected dates.`);
-        // Collapse form if there's an error
-      }
-
-    } catch (error) {
-      console.error('Error processing booking:', error);
-      setErrorMessage('Failed to process booking. Please try again.');
-    }
-  };
-
   const handleBookingConfirmation = async (e) => {
     e.preventDefault();
-
-    try {
-      const pickupDateObj = new Date(pickupDate);
-      const returnDateObj = new Date(returnDate);
-      const millisecondsPerDay = 1000 * 60 * 60 * 24;
-      const days = Math.ceil((returnDateObj - pickupDateObj) / millisecondsPerDay); // Use Math.ceil() to round up
-      setNumDays(days); 
-      console.log('Calculated Days:', days);
-
-      const productRef = doc(db, 'products', productCode);
-      const productDoc = await getDoc(productRef);
-      const calculateTotalPrice = (price, deposit, days, quantity) => {
-        const totalPrice = price * days * quantity;
-        return {
-          totalPrice,
-          deposit,
-          grandTotal: totalPrice + deposit,
     
+    try {
+      let bookingDetails = [];
+  
+      for (const product of products) {
+        const pickupDateObj = new Date(product.pickupDate);
+        const returnDateObj = new Date(product.returnDate);
+        const millisecondsPerDay = 1000 * 60 * 60 * 24;
+        const days = Math.ceil((returnDateObj - pickupDateObj) / millisecondsPerDay);
+  
+        const productRef = doc(db, 'products', product.productCode);
+        const productDoc = await getDoc(productRef);
+  
+        if (!productDoc.exists()) {
+          product.errorMessage = 'Product not found.';
+          continue; // Skip this product if not found
+        }
+  
+        const productData = productDoc.data();
+        const { price, deposit } = productData;
+        const calculateTotalPrice = (price, deposit, days, quantity) => {
+          const totalPrice = price * days * quantity;
+          return {
+            totalPrice,
+            deposit,
+            grandTotal: totalPrice + deposit,
+          };
         };
-      };
-
-      if (!productDoc.exists()) {
-        setErrorMessage('Product not found.');
-        return;
-      }
-
-      const productData = productDoc.data();
-      const { price, deposit } = productData;
-
-      const totalCost = calculateTotalPrice(price, deposit, days, quantity);
-
-      await addDoc(collection(productRef, 'bookings'), {
-        bookingId: await getNextBookingId(pickupDateObj),
-        pickupDate: pickupDateObj,
-        returnDate: returnDateObj,
-        quantity: parseInt(quantity, 10),
-        userDetails,
-        price,
-        totalCost: totalCost.totalPrice,
-        deposit: totalCost.deposit,
+  
+        const totalCost = calculateTotalPrice(price, deposit, days, product.quantity);
+  
+        const newBookingId = await getNextBookingId(pickupDateObj, product.productCode);
+  
+        // Log booking details for debugging
+        console.log("Booking details:", {
+          bookingId: newBookingId,
+          pickupDate: pickupDateObj,
+          returnDate: returnDateObj,
+          quantity: parseInt(product.quantity, 10),
+          userDetails,
+          price,
+          deposit,
+          totalCost: totalCost.totalPrice,
+        });
+  
+        // Save booking details to Firestore
         
-      });
-
+  
+        bookingDetails.push({
+          productCode: product.productCode,
+          productImageUrl: product.imageUrl,
+          deposit,
+          price,
+          numDays: days,
+          quantity: product.quantity,
+          totalPrice: totalCost.totalPrice,
+          grandTotal: totalCost.grandTotal,
+        });
+      }
+  
       setReceipt({
-        productCode,
-        productImageUrl,
-        deposit,
-        price,
-        numDays:days,
-        quantity,
-        totalPrice: totalCost.totalPrice,
-        grandTotal: totalCost.grandTotal,
+        products: bookingDetails,
       });
-
+  
     } catch (error) {
       console.error('Error confirming booking:', error);
-      setErrorMessage('Failed to confirm booking. Please try again.');
+      setErrorMessage('An error occurred while confirming your booking. Please try again.');
     }
   };
+  
+  
+
 
   const handleConfirmPayment = async () => {
     try {
-      const pickupDateObj = new Date(pickupDate);
-      const returnDateObj = new Date(returnDate);
+      for (const product of products) {
+      const pickupDateObj = new Date(product.pickupDate);
+      const returnDateObj = new Date(product.returnDate);
+      const productRef = doc(db, 'products', product.productCode);
+      const millisecondsPerDay = 1000 * 60 * 60 * 24;
+      const days = Math.ceil((returnDateObj - pickupDateObj) / millisecondsPerDay);
+        const productDoc = await getDoc(productRef);
+  
+        if (!productDoc.exists()) {
+          product.errorMessage = 'Product not found.';
+          continue; // Skip this product if not found
+        }
+        const productData = productDoc.data();
 
-      const productRef = doc(db, 'products', productCode);
+        const { price, deposit } = productData;
+        const calculateTotalPrice = (price, deposit, days, quantity) => {
+          const totalPrice = price * days * quantity;
+          return {
+            totalPrice,
+            deposit,
+            grandTotal: totalPrice + deposit,
+          };
+        };
+  
+  
 
-      // Storing the booking data in the Firestore database
+      const totalCost = calculateTotalPrice(price, deposit, days, product.quantity);
+  
+      const newBookingId = await getNextBookingId(pickupDateObj, product.productCode);
+      // Ensure receipt.products is an array
       await addDoc(collection(productRef, 'bookings'), {
-        bookingId: await getNextBookingId(pickupDateObj),
+        bookingId: newBookingId,
         pickupDate: pickupDateObj,
         returnDate: returnDateObj,
-        quantity: parseInt(quantity, 10),
-        userDetails,
-        price: receipt.totalPrice,
-        deposit: receipt.deposit,
-        totalCost: receipt.grandTotal,
+        quantity: parseInt(product.quantity, 10),
+        userDetails, // Assuming userDetails is the same for all products
+        price, // Save price
+        deposit, // Save deposit
+        totalCost: totalCost.totalPrice, // Save total price
       });
+    }
 
+  
+      // Iterate through each product and validate its details
+      
+  
       setIsPaymentConfirmed(true);
       alert('Payment Confirmed! Booking has been saved.');
-      navigate('/thank-you'); // Redirect after confirmation, change route as needed
+      navigate('/thank-you');
     } catch (error) {
       console.error('Error confirming payment:', error);
-      setErrorMessage('Failed to confirm payment. Please try again.');
+      setErrorMessage(error.message);
     }
   };
+  
+
+  
+  
+
+  
+  
   const toggleAvailabilityForm = () => {
     setIsAvailabilityFormVisible(!isAvailabilityFormVisible);
   };
@@ -458,10 +498,10 @@ function Booking() {
       </button>
       
      
-      {visibleForm === 'bookingDetails' && isAvailability1FormVisible &&  (
+      { isAvailability1FormVisible &&  (
        
         <form onSubmit={handleBookingConfirmation}>
-          <h2>Customer Details</h2>
+          <h3>Customer Details</h3>
          
           
           <div className="form-group1" style={{ marginTop: '80px' }} >
@@ -495,59 +535,65 @@ function Booking() {
         </form>
       )}
 
-      {receipt && (
-       <div className="receipt-container">
-         <h2>Booking Receipt</h2>
-         <div className="receipt-details">
-           <div className="receipt-row">
-               <div className="receipt-column">
-                   <strong>Product Image:</strong>
+          {receipt && (
+            <div className="receipt-container">
+              
+
+              {/* Render the headings only once */}
+              <div className="receipt-row">
+                <div className="receipt-column">
+                  <strong>Product Image:</strong>
+                </div>
+                <div className="receipt-column">
+                  <strong>Product Code:</strong>
+                </div>
+                <div className="receipt-column">
+                  <strong>Deposit:</strong>
+                </div>
+                <div className="receipt-column">
+                  <strong>Price per Day:</strong>
+                </div>
+                <div className="receipt-column">
+                  <strong>Quantity:</strong>
+                </div>
+                <div className="receipt-column">
+                  <strong>Number of Days:</strong>
+                </div>
+                <div className="receipt-column">
+                  <strong>Total Price:</strong>
                   
-               </div>
-               <div className="receipt-column">
-                   <strong>Product Code:</strong>
-               </div>
-               <div className="receipt-column">
-                   <strong>Deposit:</strong>
-               </div>
-               <div className="receipt-column">
-                   <strong>Price per Day:</strong>
-               </div>
-               <div className="receipt-column">
-                   <strong>Quantity:</strong>
-               </div>
-               <div className="receipt-column">
-                   <strong>Number of Days:</strong>
-               </div>
-               <div className="receipt-column">
-                   <strong>Total Price:</strong>
-               </div>
-               <div className="receipt-column">
-                   <strong>Grand Total:</strong>
-               </div>
-               {!isPaymentConfirmed && (
-                   <button onClick={handleConfirmPayment}>Confirm Payment</button>
-               )}
-               {isPaymentConfirmed && (
-                   <p className="success-message">Payment confirmed! Your booking has been saved.</p>
-               )}
-           </div>
-           <div className="receipt-values">
-           
-              <div className="receipt-column">{productImageUrl && (
-                       <img src={productImageUrl} alt="Product" style={{ width: '20px', height: '20px' }} />
-                   )}</div>
-               <div className="receipt-column">{receipt.productCode}</div>
-               <div className="receipt-column">₹{receipt.deposit}</div>
-               <div className="receipt-column">₹{receipt.price}</div>
-               <div className="receipt-column">{receipt.quantity}</div>
-               <div className="receipt-column">{receipt.numDays}</div>
-               <div className="receipt-column">₹{receipt.totalPrice}</div>
-               <div className="receipt-column">₹{receipt.grandTotal}</div>
-           </div>
-       </div>
-   </div>
-      )}
+                </div>
+                <div className="receipt-column">
+                  <strong>Grand Total:</strong>
+                </div>
+              </div>
+
+              {/* Now map over products and display only the values */}
+              {receipt.products.map((product, index) => (
+                <div key={index} className="receipt-values">
+                  <div className="receipt-column">
+                    {product.productImageUrl && (
+                      <img src={product.productImageUrl} alt="Product" style={{ width: '30px', height: '30px' }} />
+                    )}
+                  </div>
+                  <div className="receipt-column">{product.productCode}</div>
+                  <div className="receipt-column">₹{product.deposit}</div>
+                  <div className="receipt-column">₹{product.price}</div>
+                  <div className="receipt-column">{product.quantity}</div>
+                  <div className="receipt-column">{product.numDays}</div>
+                  <div className="receipt-column">₹{product.totalPrice}</div>
+                  <div className="receipt-column">₹{product.grandTotal}</div>
+                </div>
+              ))}
+
+              {!isPaymentConfirmed && (
+                <button onClick={handleConfirmPayment}>Confirm Payment</button>
+              )}
+              {isPaymentConfirmed && (
+                <p className="success-message">Payment confirmed! Your booking has been saved.</p>
+              )}
+            </div>
+          )}
       </div>
     </div>
   );

@@ -74,7 +74,7 @@ const UserDashboard = () => {
 
           // Decrease the number of users after deleting a user
           await updateDoc(branchRef, {
-            numberOfUsers: currentUsers - 1,
+            numberOfUsers: currentUsers + 1,
           });
 
           console.log('Branch user count updated.');
@@ -83,7 +83,7 @@ const UserDashboard = () => {
         }
 
         setUsers(users.filter((user) => user.id !== id));
-        setTotalUsers(totalUsers - 1); // Decrement total users
+        setTotalUsers(totalUsers + 1); // Decrement total users
       } else {
         console.error('User not found. ID:', id);
       }
