@@ -8,7 +8,7 @@ const EditUser = () => {
   const { id } = useParams();
   const [user, setUser] = useState({});
   const [loading, setLoading] = useState(true);
-  const [isActive, setIsActive] = useState(false); // Active/Deactive state
+  const [isActive, setIsActive] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -19,26 +19,29 @@ const EditUser = () => {
         if (docSnap.exists()) {
           const userData = docSnap.data();
           setUser(userData);
-          setIsActive(userData.isActive || false); // Set active status
+          setIsActive(userData.isActive || false);
         } else {
           console.error('User not found');
+          alert('User not found. Redirecting to users list.'); // User feedback
+          navigate('/users'); // Redirect if user not found
         }
       } catch (error) {
         console.error('Error fetching user data:', error);
+        alert('Error fetching user data. Please try again.'); // User feedback
       } finally {
         setLoading(false);
       }
     };
 
     fetchUser();
-  }, [id]);
+  }, [id, navigate]);
 
   const handleSave = async () => {
     try {
       const docRef = doc(db, 'subusers', id);
       await updateDoc(docRef, {
         ...user,
-        isActive, // Save the active/deactive state
+        isActive,
       });
       alert('User updated successfully!'); // Show success notification
       navigate('/users'); // Redirect back to user dashboard
@@ -48,6 +51,11 @@ const EditUser = () => {
     }
   };
 
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setUser((prevUser) => ({ ...prevUser, [name]: value }));
+  };
+
   return (
     <div className="edit-user-container">
       {loading ? (
@@ -55,53 +63,54 @@ const EditUser = () => {
       ) : (
         <div className="edit-user-form">
           <h2>Edit User</h2>
+
           <label>Name:</label>
           <input
             type="text"
+            name="name"
             value={user.name || ''}
-            onChange={(e) => setUser({ ...user, name: e.target.value })}
+            onChange={handleInputChange}
           />
 
           <label>Email:</label>
           <input
             type="text"
+            name="email"
             value={user.email || ''}
-            onChange={(e) => setUser({ ...user, email: e.target.value })}
+            onChange={handleInputChange}
           />
 
           <label>Salary:</label>
           <input
             type="text"
+            name="salary"
             value={user.salary || ''}
-            onChange={(e) => setUser({ ...user, salary: e.target.value })}
+            onChange={handleInputChange}
           />
 
           <label>Contact Number:</label>
           <input
             type="text"
+            name="contactNumber"
             value={user.contactNumber || ''}
-            onChange={(e) => setUser({ ...user, contactNumber: e.target.value })}
+            onChange={handleInputChange}
           />
 
           <label>Role:</label>
           <input
             type="text"
+            name="role"
             value={user.role || ''}
-            onChange={(e) => setUser({ ...user, role: e.target.value })}
+            onChange={handleInputChange}
           />
 
-          <label>Permission:</label>
-          <input
-            type="text"
-            value={user.permission || ''}
-            onChange={(e) => setUser({ ...user, permission: e.target.value })}
-          />
+          
 
           <label>Active:</label>
           <input
             type="checkbox"
             checked={isActive}
-            onChange={() => setIsActive(!isActive)} // Toggle active status
+            onChange={() => setIsActive((prev) => !prev)} // Toggle active status
           />
 
           <button onClick={handleSave}>Save</button>

@@ -8,22 +8,25 @@ import './Adduser.css';
 
 const AddUser = () => {
   const { userData } = useUser(); // Get user data from context
+  const navigate = useNavigate(); // For navigation
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [salary, setSalary] = useState('');
   const [contactNumber, setContactNumber] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('');
+  const [role, setRole] = useState('Subuser'); // Default role set to "Subuser"
   const [permission, setPermission] = useState('');
- 
   const [date, setDate] = useState('');
-  const [isCheckboxChecked, setIsCheckboxChecked] = useState(false);
   const [branchCode, setBranchCode] = useState(''); // Store branch code
   const [userLimitReached, setUserLimitReached] = useState(false); // State to track user limit
 
-  const navigate = useNavigate(); // For navigation
-  const [isActive, setIsActive] = useState(true); // New field for user status
-
+  // Redirect if the user is not authorized
+  useEffect(() => {
+    if (!userData || (userData.role !== 'Super Admin' && userData.role !== 'Branch Manager')) {
+      navigate('/'); // Redirect to home or another page if unauthorized
+    }
+  }, [userData, navigate]);
 
   // Directly set branchCode if userData is available
   useEffect(() => {
@@ -79,10 +82,10 @@ const AddUser = () => {
         salary,
         contactNumber,
         password,
-        role,
+        role, // Role is now 'Subuser' by default
         permission,
         date,
-        isActive, // Set status as active
+        isActive: true, // User is active by default
         branchCode,
       };
 
@@ -112,7 +115,7 @@ const AddUser = () => {
       setSalary('');
       setContactNumber('');
       setPassword('');
-      setRole('');
+      setRole('Subuser');
       setPermission('');
       setDate('');
 
@@ -128,7 +131,6 @@ const AddUser = () => {
   const handleCancel = () => {
     navigate('/usersidebar/users'); // Redirect to user dashboard on cancel
   };
-
 
   return (
     <div className="add-user-container">
@@ -197,7 +199,6 @@ const AddUser = () => {
               placeholder="Branch code"
             />
           </div>
-          
         </div>
 
         <div className="form-right">
@@ -231,51 +232,30 @@ const AddUser = () => {
               type="text"
               id="role"
               value={role}
-              onChange={(e) => setRole(e.target.value)}
-              placeholder="Enter role"
-              required
-              disabled={userLimitReached}
+              readOnly
+              placeholder="Subuser"
             />
           </div>
-          <div className="form-group">
-            <label>Permission</label>
-            <div className="permission-container">
-              <select className='permission-container-option'
-                value={permission}
-                onChange={(e) => setPermission(e.target.value)}
-                required
-                disabled={userLimitReached}
-              >
-                <option value="">Select permission</option>
-                <option value="invoice">Invoice</option>
-                <option value="users">Users</option>
-                <option value="product">Product</option>
-                <option value="whatsapp_template">Whatsapp Template</option>
-                <option value="sales">Sales</option>
-              </select>
-            </div>
-            
-          </div>
-          
-             <div className="checkbox-container">
-                   <input
-                    type="checkbox"
-                    checked={isCheckboxChecked}
-                    onChange={(e) => setIsCheckboxChecked(e.target.checked)}
-                   disabled={userLimitReached}
-                 />
-                <label htmlFor="grantAllPermissions">Grant all permissions</label>
-             </div>
-          
-          <div className="button-group">
-          <button type="button" className="btn cancel" onClick={handleCancel}>Cancel</button>
-          <button type="submit" className="btn add-employee" disabled={userLimitReached}>Add Employee</button>
-        </div>
-          
           
         </div>
 
-        
+        <div className="button-group">
+          <button
+            type="button"
+            className="btn cancel"
+            onClick={handleCancel}
+            disabled={userLimitReached}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="btn add-employee"
+            disabled={userLimitReached}
+          >
+            Add User
+          </button>
+        </div>
       </form>
     </div>
   );

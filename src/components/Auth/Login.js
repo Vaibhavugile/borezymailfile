@@ -56,7 +56,6 @@ const Login = () => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-
       const token = await user.getIdToken();
 
       if (rememberMe) {
@@ -66,6 +65,8 @@ const Login = () => {
         sessionStorage.setItem('authToken', token);
         sessionStorage.setItem('userEmail', JSON.stringify(email));
       }
+
+      // Check if the user is a Super Admin
       const superAdminQuery = query(collection(db, 'superadmins'), where('email', '==', email));
       const superAdminSnapshot = await getDocs(superAdminQuery);
 
@@ -76,24 +77,117 @@ const Login = () => {
         return;
       }
 
+      // Check if the user is a Branch Manager
       const branchQuery = query(collection(db, 'branches'), where('emailId', '==', email));
       const branchSnapshot = await getDocs(branchQuery);
 
       if (!branchSnapshot.empty) {
         const branchData = branchSnapshot.docs[0].data();
+        const today = await fetchRealTimeDate();
 
-        // Set user data with branchCode and branchName for branch managers
+        const branchActiveDate = new Date(branchData.activeDate);
+        const branchDeactiveDate = new Date(branchData.deactiveDate);
+
+        if (today < branchActiveDate) {
+          setError('Branch plan not active.');
+          setLoading(false);
+          return;
+        }
+
+        if (today > branchDeactiveDate) {
+          setError('Branch plan is expired.');
+          setLoading(false);
+          return;
+        }
+
+        if (branchData.firstLogin) {
+          navigate('/change-password');
+          return;
+        }
+
         setUserData({
           name: branchData.ownerName,
           role: 'Branch Manager',
           email,
-          branchCode: branchData.branchCode,  // Add branch code to user data
+          branchCode: branchData.branchCode,
           branchName: branchData.branchName,
-          numberOfUsers: branchData.numberOfUsers,  // Add branch name to user data
+          numberOfUsers: branchData.numberOfUsers,
         });
-
         navigate('/welcome');
         return;
+      }
+
+      // Check if the user is a Subuser
+      const subuserQuery = query(collection(db, 'subusers'), where('email', '==', email));
+      const subuserSnapshot = await getDocs(subuserQuery);
+
+      if (!subuserSnapshot.empty) {
+        const subuserData = subuserSnapshot.docs[0].data();
+        const today = await fetchRealTimeDate();
+
+        // Check if the subuser is active
+        if (!subuserData.isActive) {
+          setError('Subuser account is inactive. Contact your branch owner.');
+          setLoading(false);
+          return;
+        }
+
+        const subuserActiveDate = new Date(subuserData.activeDate);
+        const subuserDeactiveDate = new Date(subuserData.deactiveDate);
+
+        if (today < subuserActiveDate) {
+          setError('Subuser plan not active. Contact your branch owner.');
+          setLoading(false);
+          return;
+        }
+
+        if (today > subuserDeactiveDate) {
+          setError('Subuser plan is expired. Contact your branch owner.');
+          setLoading(false);
+          return;
+        }
+
+        // Check the associated branch status
+        const branchRef = collection(db, 'branches');
+        const branchQuery = query(branchRef, where('branchCode', '==', subuserData.branchCode));
+        const branchSnapshot = await getDocs(branchQuery);
+
+        if (!branchSnapshot.empty) {
+          const branchData = branchSnapshot.docs[0].data();
+
+          const branchActiveDate = new Date(branchData.activeDate);
+          const branchDeactiveDate = new Date(branchData.deactiveDate);
+
+          if (!subuserData.isActive) {
+            setError('Subuser account is inactive. Contact your branch owner.');
+            setLoading(false);
+            return;
+          }
+          if (today < branchActiveDate) {
+            setError('Branch plan not active. Contact your branch owner.');
+            setLoading(false);
+            return;
+          }
+
+          if (today > branchDeactiveDate) {
+            setError('Branch plan is expired. Contact your branch owner.');
+            setLoading(false);
+            return;
+          }
+
+          setUserData({
+            name: subuserData.name,
+            role: 'Subuser',
+            email,
+            branchCode: subuserData.branchCode,
+          });
+          navigate('/welcome');
+          return;
+        } else {
+          setError('Associated branch not found. Contact your branch owner.');
+          setLoading(false);
+          return;
+        }
       }
 
       setError('No user found with the provided credentials.');
@@ -106,27 +200,23 @@ const Login = () => {
   };
 
   return (
-    <div className="sign-in-container">
-      <div className="sign-in-left">
-        
-      
-       <h1>Welcome Back!</h1>
+    <div className="login-container">
+      <img src={BgAbstract} alt="Background" className="background-image" />
 
-      </div>
-
-     
-      
       <div className="logo-container">
         <img src={Logo} alt="Logo" className="logo-image" />
       </div>
 
+      <div className="welcome-text">
+        Welcome <br /> Back!
+      </div>
 
-    <div className="sign-in-right">
-      <p>Sign In</p>
-      <p>Welcome back! Please sign in to your account</p>
+      <div className="form-container">
+        <div className="title">Sign In</div>
+        <div className="subtitle">Welcome back! Please sign in to your account</div>
 
-        <form onSubmit={handleLogin} >
-          <div className="input-group">
+        <form onSubmit={handleLogin} className="login-form">
+          <div className="form-group">
             <TextField
               label="Email ID"
               variant="outlined"
@@ -136,7 +226,7 @@ const Login = () => {
               fullWidth
             />
           </div>
-          <div className="input-group">
+          <div className="form-group">
             <TextField
               label="Password"
               variant="outlined"
@@ -165,9 +255,11 @@ const Login = () => {
             <label>Remember Me</label>
           </div>
 
-          <div className="forgot-password">Forgot your password</div>
+          <div className="forgot-password">
+            Forgot your password
+          </div>
 
-          <Button className='sign-in-button' fullWidth variant="contained" type="submit" disabled={loading}>
+          <Button fullWidth variant="contained" type="submit" disabled={loading}>
             {loading ? 'Logging in...' : 'Sign In'}
           </Button>
 

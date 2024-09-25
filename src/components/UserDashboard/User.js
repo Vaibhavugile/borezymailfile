@@ -72,8 +72,9 @@ const UserDashboard = () => {
           const branchData = branchSnap.data();
           const currentUsers = branchData.numberOfUsers || 0;
 
+          // Decrease the number of users after deleting a user
           await updateDoc(branchRef, {
-            numberOfUsers: currentUsers + 1,
+            numberOfUsers: currentUsers - 1,
           });
 
           console.log('Branch user count updated.');
@@ -82,7 +83,7 @@ const UserDashboard = () => {
         }
 
         setUsers(users.filter((user) => user.id !== id));
-        setTotalUsers(totalUsers + 1);
+        setTotalUsers(totalUsers - 1); // Decrement total users
       } else {
         console.error('User not found. ID:', id);
       }
@@ -189,7 +190,6 @@ const UserDashboard = () => {
               <option value="contactNumber">Contact Number</option>
               <option value="salary">Salary</option>
               <option value="role">Role</option>
-              <option value="permission">Permission</option>
             </select>
             <input
               type="text"
@@ -231,7 +231,6 @@ const UserDashboard = () => {
                   <th>Salary</th>
                   <th>Contact Number</th>
                   <th>Role</th>
-                  <th>Permission</th>
                   <th>Status</th> {/* Updated Column */}
                   <th>Actions</th>
                 </tr>
@@ -244,25 +243,19 @@ const UserDashboard = () => {
                     <td>{user.salary}</td>
                     <td>{user.contactNumber}</td>
                     <td>{user.role}</td>
-                    <td>{user.permission}</td>
-                    <td>
-                      <span
-                        className={`status ${user.isActive ? 'active' : 'inactive'}`}
-                        onClick={() => handleStatusChange(user.id, user.isActive)}
-                      >
-                        {user.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
+                    <td>{user.isActive ? 'Active' : 'Inactive'}</td>
                     <td>
                       <button onClick={() => handleEdit(user.id)}>Edit</button>
                       <button onClick={() => handleDelete(user.id)}>Delete</button>
+                      
+                    
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           ) : (
-            <p>No users found.</p>
+            <p>No users found</p>
           )}
         </div>
       </div>

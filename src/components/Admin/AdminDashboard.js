@@ -95,9 +95,14 @@ const AdminDashboard = () => {
 
   const formatDate = (date) => {
     if (!date) return '';
-    const formattedDate = new Date(date);
-    return formattedDate.toLocaleDateString();
+    if (typeof date === 'object' && date.seconds) { // Check if it's a Firestore timestamp
+      const formattedDate = new Date(date.seconds * 1000);
+      return formattedDate.toLocaleDateString();
+    }
+    return new Date(date).toLocaleDateString(); // Fallback for other date formats
   };
+  
+  
 
   const filterTitleMap = {
     'all': 'All Branches',
@@ -120,14 +125,28 @@ const AdminDashboard = () => {
       document.body.removeChild(link);
     }
   };
+  
   const calculateRemainingDays = (deactiveDate) => {
-    if (!deactiveDate) return 'N/A';
-    const end = new Date(deactiveDate);
+    if (!deactiveDate) return 'N/A'; // Check if deactiveDate is null or invalid
+  
+    let endDate;
+  
+    // Check if deactiveDate is a Firestore timestamp
+    if (typeof deactiveDate === 'object' && deactiveDate.seconds) {
+      endDate = new Date(deactiveDate.seconds * 1000); // Convert Firestore timestamp to Date
+    } else {
+      endDate = new Date(deactiveDate); // Fallback for other date formats
+    }
+  
     const today = new Date();
-    const diffTime = end - today;
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffTime = endDate - today;
+  
+    if (diffTime < 0) {
+      return 0; // If the date has already passed, return 0
+    }
+    
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // Calculate remaining days
   };
-
 
   const handleImport = (event) => {
     const file = event.target.files[0];
@@ -231,8 +250,8 @@ const AdminDashboard = () => {
                   <td>{branch.subscriptionType}</td>
                   <td>{branch.numberOfUsers}</td>
                   <td>{branch.password}</td>
-                  <td>{branch.activeDate || 'N/A'}</td>
-                  <td>{branch.deactiveDate || 'N/A'}</td>
+                  <td>{formatDate(branch.activeDate) || 'N/A'}</td>
+                  <td>{formatDate(branch.deactiveDate) || 'N/A'}</td>
                   <td>{branch.amount}</td>
                   <td>{calculateRemainingDays(branch.deactiveDate)}</td>
                   <td className={calculateRemainingDays(branch.deactiveDate) > 0 ? 'status-active' : 'status-deactive'}>
