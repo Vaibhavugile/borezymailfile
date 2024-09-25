@@ -27,72 +27,84 @@ function Booking() {
   const [availableQuantity, setAvailableQuantity] = useState(null);
   const [deposit, setDeposit] = useState(0); // Add a state for deposit
   const [price, setPrice] = useState(0); // Add a state for price
-  const [numDays, setNumDays] = useState(0); // Number of days between pickup and return
-
+  const [numDays, setNumDays] = useState(0);
+   // Number of days between pickup and return
+  const [products, setProducts] = useState([
+    { productCode: '', pickupDate: '', returnDate: '', quantity: '', availableQuantity: null, errorMessage: '', productImageUrl: '' },
+  ]);
   const navigate = useNavigate();
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
 
-
-  const fetchProductImage = async (code) => {
-    
+  const fetchProductImage = async (productCode, index) => {
     try {
-      // Reference to the product document in Firestore
-      const productRef = doc(db, 'products', code);
+      const productRef = doc(db, 'products', productCode);
       const productDoc = await getDoc(productRef);
-  
+
       if (productDoc.exists()) {
         const productData = productDoc.data();
-        const imagePath = productData.imageUrls[0];
-        setPrice(productData.price); // Set product price from Firestore
-        setDeposit(productData.deposit);  // Ensure you have an 'imagePath' field in your product document
-  
-        console.log('Image Path:', imagePath); // Log the image path to verify
-  
+        const imagePath = productData.imageUrls ? productData.imageUrls[0] : null;
+
         if (imagePath) {
           const storage = getStorage();
-          const imageRef = ref(storage, imagePath); // Use the image path from Firestore
-  
-          console.log('Image Reference:', imageRef); // Log the image reference
-  
+          const imageRef = ref(storage, imagePath);
           const url = await getDownloadURL(imageRef);
-          setProductImageUrl(url);
+          
+          // Update the specific product's image URL
+          setProducts((prevProducts) => {
+            const newProducts = [...prevProducts];
+            newProducts[index] = { ...newProducts[index], imageUrl: url }; // Store the image URL in the specific product
+            return newProducts;
+          });
+          console.log('Fetched Image URL:', url);
         } else {
-          setProductImageUrl(''); // No image path found in Firestore
+          console.log('No image path found for this product');
+          setProducts((prevProducts) => {
+            const newProducts = [...prevProducts];
+            newProducts[index] = { ...newProducts[index], imageUrl: 'path/to/placeholder-image.jpg' }; // Default image
+            return newProducts;
+          });
         }
       } else {
-        setProductImageUrl(''); // Product not found
+        console.log('Product not found in Firestore');
       }
     } catch (error) {
-      console.error('Error fetching product image: ', error);
-      setProductImageUrl(''); // Clear image URL on error
+      console.error('Error fetching product image:', error);
     }
   };
-  
-  useEffect(() => {
-    console.log('Product Code:', productCode); // Log the product code
-    if (productCode) {
-      fetchProductImage(productCode);
-    }
-  }, [productCode]);
 
-  const checkAvailability = async (pickupDateObj, returnDateObj, bookingId) => {
+
+  const handleProductChange = (index, event) => {
+    const { name, value } = event.target;
+    const newProducts = [...products];
+    newProducts[index][name] = value;
+    if (name === 'productCode') {
+      fetchProductImage(value, index);
+    } // Update based on input name
+    setProducts(newProducts);
+  };
+
+  const checkAvailability = async (index) => {
+    const { productCode, pickupDate, returnDate, quantity } = products[index];
+    const pickupDateObj = new Date(pickupDate);
+    const returnDateObj = new Date(returnDate);
+    const bookingId = 1234; // Replace with actual booking ID logic if needed
+
     try {
       const productRef = doc(db, 'products', productCode);
       const productDoc = await getDoc(productRef);
 
       if (!productDoc.exists()) {
-        setErrorMessage('Product not found.');
-        return 0;
+        const newProducts = [...products];
+        newProducts[index].errorMessage = 'Product not found.';
+        setProducts(newProducts);
+        return;
       }
 
       const productData = productDoc.data();
       const maxAvailableQuantity = productData.quantity || 0;
-      
-      
-      
 
       const bookingsRef = collection(productRef, 'bookings');
       const qLess = query(bookingsRef, where('bookingId', '<', bookingId), orderBy('bookingId', 'asc'));
@@ -166,16 +178,27 @@ function Booking() {
 
         availableQuantity -= totalOverlapQuantity;
       }
-      console.log('Available Quantity:', availableQuantity);  // Log available quantity
 
-      return availableQuantity;
+      const newProducts = [...products];
+      newProducts[index].availableQuantity = availableQuantity;
+      newProducts[index].errorMessage = ''; // Clear error message if successful
+      setProducts(newProducts);
 
     } catch (error) {
       console.error('Error checking availability:', error);
-      setErrorMessage('Failed to check availability. Please try again.');
-      return 0;
+      const newProducts = [...products];
+      newProducts[index].errorMessage = 'Failed to check availability. Please try again.';
+      setProducts(newProducts);
     }
   };
+
+  const addProductForm = () => {
+    setProducts([...products, { productCode: '', pickupDate: '', returnDate: '', quantity: '', availableQuantity: null, errorMessage: '', productImageUrl: '' }]);
+  };
+
+
+
+
   
 
   const getNextBookingId = async (pickupDateObj) => {
@@ -359,73 +382,76 @@ function Booking() {
       <UserHeader onMenuClick={toggleSidebar} />
      <div className='issidebar'>
      <UserSidebar isOpen={isSidebarOpen} />
-     
-     
-      <button onClick={toggleAvailabilityForm} className='availability-toogle-button'>
+     <button onClick={toggleAvailabilityForm} className='availability-toogle-button'>
           {isAvailabilityFormVisible ? 'Hide Availability Form' : 'Show Availability Form'}
       </button>
       
       {isAvailabilityFormVisible  && (
-      
-
-      <form onSubmit={handleSubmit}>
-        <h1>Check Availability</h1>
-        <div className="form-group1" style={{ marginTop: '80px' }}>
-          <label>Product Code</label>
-          <input
-            type="text"
-            value={productCode}
-            onChange={(e) => setProductCode(e.target.value)}
-            required
-          />
+     
+     <div>
+      <h2>Check Product Availability </h2>
+      {products.map((product, index) => (
+        <div key={index} className="product-check" style={{ marginBottom: '20px', padding: '10px', border: '1px solid #ddd' }}>
+          <div className="form-group1" style={{ marginTop: '120px' }}>
+            <label>Product Code</label>
+            <input
+              type="text"
+              name="productCode"
+              value={product.productCode}
+              onChange={(e) => handleProductChange(index, e)} 
+              required
+            />
+          </div>
+          <div className="form-group1">
+            <label>Pickup Date</label>
+            <input
+              type="datetime-local"
+              name="pickupDate"
+              value={product.pickupDate}
+              onChange={(e) => handleProductChange(index, e)}
+              required
+            />
+          </div>
+          <div className="form-group1">
+            <label>Return Date</label>
+            <input
+              type="datetime-local"
+              name="returnDate"
+              value={product.returnDate}
+              onChange={(e) => handleProductChange(index, e)}
+              required
+            />
+          </div>
+          <div className="form-group1">
+            <label>Quantity</label>
+            <input
+              type="number"
+              name="quantity"
+              value={product.quantity}
+              onChange={(e) => handleProductChange(index, e)}
+              required
+            />
+          </div>
+          <div className="product-image-container1">
+            {product.imageUrl && ( // Change from productImageUrl to product.imageUrl
+              <img src={product.imageUrl} alt="Product" className="product-image1" />
+            )}
+          </div>
+          <button type="button" className='checkavailability' onClick={() => checkAvailability(index)}>Check Availability</button>
+          <div className="available-quantity-display">
+            {product.errorMessage ? (
+              <span style={{ color: 'red' }}>{product.errorMessage}</span>
+            ) : (
+              product.availableQuantity !== null && (
+                <p>Available Quantity: {product.availableQuantity}</p>
+              )
+            )}
+          </div>
         </div>
-        <div className="form-group1">
-          <label>Pickup Date</label>
-          <input
-            type="datetime-local"
-            value={pickupDate}
-            onChange={(e) => setPickupDate(e.target.value)}
-            required
-          />
-        </div>
-        <div className="form-group1">
-          <label>Return Date</label>
-          <input
-            type="datetime-local"
-            value={returnDate}
-            onChange={(e) => setReturnDate(e.target.value)}
-            required
-          />
-        </div>
-        <div className="form-group1">
-          <label>Quantity</label>
-          <input
-            type="number"
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-            required
-          />
-        </div>
-        <div className="product-image-container1">
-        {productImageUrl ? (
-          <img src={productImageUrl} alt="Product" className="product-image1" />
-        ) : (
-          <p>No image available</p>
-        )}
-      </div>
-        <button type="submit" className='checkavailability'>Check Availability</button>
-        <div className="available-quantity-display">
-        {availableQuantity !== null && (
-          <p>Available Quantity: {availableQuantity}</p>
-        )}
-      </div>
-      </form>
+      ))}
+      <button className='checkavailability11' onClick={addProductForm}>Add Product</button>
+     </div>
       )}
-      
-
-      {errorMessage && <p className="error-message">{errorMessage}</p>}
-
-      
 
       <button onClick={toggleAvailability1Form} className='availability1-toogle-button'>
           {isAvailability1FormVisible ? 'Hide Customer Details Form' : 'Show Customer Detail  Form'}
