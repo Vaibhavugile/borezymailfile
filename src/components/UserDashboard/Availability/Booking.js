@@ -430,7 +430,18 @@ function Booking() {
   };
 
   const toggleAvailability1Form = () => {
-    setIsAvailability1FormVisible(!isAvailability1FormVisible);
+    
+      // Function to check if all entered quantities are less than or equal to available quantities
+      const allQuantitiesAvailable = products.every(product => {
+        return parseInt(product.quantity, 10) <= (product.availableQuantity || 0);
+      });
+    
+      if (allQuantitiesAvailable) {
+        setIsAvailability1FormVisible(!isAvailability1FormVisible);
+      } else {
+        alert('Entered quantities exceed available quantities for one or more products.');
+      }
+    
   };
 
   return (
@@ -557,6 +568,7 @@ function Booking() {
       { isAvailability1FormVisible &&  (
        
         <form onSubmit={handleBookingConfirmation}>
+          <div className='customer-details-form'>
           <h3>Customer Details</h3>
          
           
@@ -597,6 +609,7 @@ function Booking() {
             />
           </div>
           <button type="submit" className='confirm-booking-button'>Confirm Booking</button>
+          </div>
         </form>
       )}
 
