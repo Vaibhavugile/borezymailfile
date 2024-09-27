@@ -19,7 +19,7 @@ function Booking() {
   const [isAvailability1FormVisible, setIsAvailability1FormVisible] = useState(false); 
   
   const [visibleForm, setVisibleForm] = useState(''); // Track visible form by its id
-  const [userDetails, setUserDetails] = useState({ name: '', email: '', contact: '' });
+  const [userDetails, setUserDetails] = useState({ name: '', email: '', contact: '',assignedto:'' });
 
   const [receipt, setReceipt] = useState(null); // Store receipt details
   const [isPaymentConfirmed, setIsPaymentConfirmed] = useState(false); // Track if payment is confirmed
@@ -31,7 +31,7 @@ function Booking() {
   const [numDays, setNumDays] = useState(0);
    // Number of days between pickup and return
   const [products, setProducts] = useState([
-    { productCode: '', pickupDate: '', returnDate: '', quantity: '', availableQuantity: null, errorMessage: '',price:'',deposit:'',},
+    {  pickupDate: '', returnDate: '', productCode: '',  quantity: '', availableQuantity: null, errorMessage: '',price:'',deposit:'',},
   ]);
   const navigate = useNavigate();
   const toggleSidebar = () => {
@@ -39,54 +39,65 @@ function Booking() {
   };
  
 
-  const fetchProductImage = async (productCode, index) => {
+  
+  
+  // Function to fetch product image, price, and deposit based on productCode
+  const fetchProductDetails = async (productCode, index) => {
     try {
       const productRef = doc(db, 'products', productCode);
       const productDoc = await getDoc(productRef);
-
+  
       if (productDoc.exists()) {
         const productData = productDoc.data();
         const imagePath = productData.imageUrls ? productData.imageUrls[0] : null;
-
+        const price = productData.price || 'N/A'; // Fetch price from Firestore
+        const deposit = productData.deposit || 'N/A';
+        const totalQuantity = productData.quantity || 0; // Fetch total quantity from Firestore // Fetch deposit from Firestore
+  
+        let imageUrl = null;
         if (imagePath) {
           const storage = getStorage();
           const imageRef = ref(storage, imagePath);
-          const url = await getDownloadURL(imageRef);
-          
-          // Update the specific product's image URL
-          setProducts((prevProducts) => {
-            const newProducts = [...prevProducts];
-            newProducts[index] = { ...newProducts[index], imageUrl: url }; // Store the image URL in the specific product
-            return newProducts;
-          });
-          console.log('Fetched Image URL:', url);
+          imageUrl = await getDownloadURL(imageRef); // Fetch image URL from Firebase Storage
+          console.log('Fetched Image URL:', imageUrl);
         } else {
           console.log('No image path found for this product');
-          setProducts((prevProducts) => {
-            const newProducts = [...prevProducts];
-            newProducts[index] = { ...newProducts[index], imageUrl: 'path/to/placeholder-image.jpg' }; // Default image
-            return newProducts;
-          });
+          imageUrl = 'path/to/placeholder-image.jpg'; // Use a placeholder if no image is found
         }
+  
+        // Update the specific product's details (image URL, price, deposit)
+        setProducts((prevProducts) => {
+          const newProducts = [...prevProducts];
+          newProducts[index] = {
+            ...newProducts[index],
+            imageUrl,  // Store the image URL
+            price,     // Store the price
+            deposit,
+            totalQuantity,    // Store the deposit
+          };
+          return newProducts;
+        });
       } else {
         console.log('Product not found in Firestore');
       }
     } catch (error) {
-      console.error('Error fetching product image:', error);
+      console.error('Error fetching product details:', error);
     }
   };
-
-
+  
+  // Function to handle product input changes
   const handleProductChange = (index, event) => {
     const { name, value } = event.target;
     const newProducts = [...products];
     newProducts[index][name] = value;
+  
     if (name === 'productCode') {
-      fetchProductImage(value, index);
-    } // Update based on input name
+      fetchProductDetails(value, index); // Fetch image, price, and deposit when productCode is entered
+    }
+  
     setProducts(newProducts);
   };
-
+  
   const checkAvailability = async (index) => {
     const { productCode, pickupDate, returnDate, quantity } = products[index];
     const pickupDateObj = new Date(pickupDate);
@@ -180,6 +191,11 @@ function Booking() {
 
         availableQuantity -= totalOverlapQuantity;
       }
+
+      if (availableQuantity < 0) {
+        availableQuantity = 0;
+      }
+  
 
       const newProducts = [...products];
       newProducts[index].availableQuantity = availableQuantity;
@@ -431,8 +447,30 @@ function Booking() {
      <div>
       <h2>Check Product Availability </h2>
       {products.map((product, index) => (
-        <div key={index} className="product-check" style={{ marginBottom: '20px', padding: '10px', border: '1px solid #ddd' }}>
-          <div className="form-group1" style={{ marginTop: '120px' }}>
+        <div key={index} className="product-check" style={{ marginBottom: '20px', padding: '10px', border: '1px solid #ddd',background:'#ffffff',}}>
+          <div className="date-row" style={{  width: '700px',display:'flex',marginTop: '100px', }}>
+           <div className="form-group1" style={{ flex: '0 0 45%', marginRight: '0px' }}>
+             <label>Pickup Date</label>
+             <input
+              type="datetime-local"
+              name="pickupDate"
+              value={product.pickupDate}
+              onChange={(e) => handleProductChange(index, e)}
+              required
+             />
+           </div>
+            <div className="form-group1" style={{ flex: '0 0 45%',marginLeft:"70px"}} >
+              <label>Return Date</label>
+             <input
+              type="datetime-local"
+              name="returnDate"
+              value={product.returnDate}
+              onChange={(e) => handleProductChange(index, e)}
+              required
+             />
+            </div>
+          </div>
+          <div className="form-group1" >
             <label>Product Code</label>
             <input
               type="text"
@@ -442,26 +480,8 @@ function Booking() {
               required
             />
           </div>
-          <div className="form-group1">
-            <label>Pickup Date</label>
-            <input
-              type="datetime-local"
-              name="pickupDate"
-              value={product.pickupDate}
-              onChange={(e) => handleProductChange(index, e)}
-              required
-            />
-          </div>
-          <div className="form-group1">
-            <label>Return Date</label>
-            <input
-              type="datetime-local"
-              name="returnDate"
-              value={product.returnDate}
-              onChange={(e) => handleProductChange(index, e)}
-              required
-            />
-          </div>
+         
+          
           <div className="form-group1">
             <label>Quantity</label>
             <input
@@ -472,24 +492,60 @@ function Booking() {
               required
             />
           </div>
+          <div className="date-row" style={{  width: '700px',display: 'flex'}}>
+           <div className="form-group1" style={{ flex: '0 0 45%', marginRight: '0px'  }}>
+           <label>Rent</label>
+              <input 
+                type="text" 
+                id="Rent" 
+                value={product.price} 
+                readOnly
+                placeholder="₹ 00.00"
+              />
+           </div>
+            <div className="form-group1" style={{ flex: '0 0 45%',marginLeft:"70px" }} >
+              <label>Deposit</label>
+             <input
+              type="text"
+              id="Deposite"
+              value={product.deposit}
+              readOnly
+              placeholder='₹ 00.00'
+             
+             />
+            </div>
+          </div>
+          <div className='total-quantity-display'>
+            <p className='quantity-item1'>Total Quantity: {product.totalQuantity}</p>
+            <p className='quantity-item2'>Booked Quantity: {product.totalQuantity - product.availableQuantity}</p>
+          </div>
+
           <div className="product-image-container1">
             {product.imageUrl && ( // Change from productImageUrl to product.imageUrl
               <img src={product.imageUrl} alt="Product" className="product-image1" />
             )}
           </div>
+         
+          
           <button type="button" className='checkavailability' onClick={() => checkAvailability(index)}>Check Availability</button>
           <div className="available-quantity-display">
             {product.errorMessage ? (
               <span style={{ color: 'red' }}>{product.errorMessage}</span>
+              
             ) : (
               product.availableQuantity !== null && (
+
                 <p>Available Quantity: {product.availableQuantity}</p>
+                
+
               )
             )}
           </div>
+          
         </div>
       ))}
       <button className='checkavailability11' onClick={addProductForm}>Add Product</button>
+      
      </div>
       )}
 
@@ -531,40 +587,50 @@ function Booking() {
               required
             />
           </div>
+          <div className="form-group1">
+            <label>Assigned To</label>
+            <input
+              type="text"
+              value={userDetails.assignedto}
+              onChange={(e) => setUserDetails({ ...userDetails, assignedto: e.target.value })}
+              required
+            />
+          </div>
           <button type="submit" className='confirm-booking-button'>Confirm Booking</button>
         </form>
       )}
 
           {receipt && (
             <div className="receipt-container">
-              
+
+              <h3>Bill Summary</h3>
 
               {/* Render the headings only once */}
               <div className="receipt-row">
                 <div className="receipt-column">
-                  <strong>Product Image:</strong>
+                  <strong>Product Image</strong>
                 </div>
                 <div className="receipt-column">
-                  <strong>Product Code:</strong>
+                  <strong>Product Code</strong>
                 </div>
                 <div className="receipt-column">
-                  <strong>Deposit:</strong>
+                  <strong>Deposit</strong>
                 </div>
                 <div className="receipt-column">
-                  <strong>Price per Day:</strong>
+                  <strong>Price per Day</strong>
                 </div>
                 <div className="receipt-column">
-                  <strong>Quantity:</strong>
+                  <strong>Quantity</strong>
                 </div>
                 <div className="receipt-column">
-                  <strong>Number of Days:</strong>
+                  <strong>Number of Days</strong>
                 </div>
                 <div className="receipt-column">
-                  <strong>Total Price:</strong>
+                  <strong>Total Price</strong>
                   
                 </div>
                 <div className="receipt-column">
-                  <strong>Grand Total:</strong>
+                  <strong>Grand Total</strong>
                 </div>
               </div>
 
@@ -587,7 +653,7 @@ function Booking() {
               ))}
 
               {!isPaymentConfirmed && (
-                <button onClick={handleConfirmPayment}>Confirm Payment</button>
+                <button onClick={handleConfirmPayment} className='receiptconfirmpayment'>Confirm Payment</button>
               )}
               {isPaymentConfirmed && (
                 <p className="success-message">Payment confirmed! Your booking has been saved.</p>
