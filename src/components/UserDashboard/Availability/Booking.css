@@ -81,16 +81,17 @@
 }
 
 .availability1-toogle-button {
-    background-color: #FFFFFF; /* Bootstrap primary color */
+    background-color: #1f10f3; /* Bootstrap primary color */
     color: black; /* Text color */
     border: none; /* No border */
     border-radius: 5px; /* Rounded corners */
     padding: 10px 20px; /* Padding for the button */
     cursor: pointer; /* Pointer cursor on hover */
     font-size: 16px; /* Font size */
-    margin-top: 100px;
-    width: 1200px;
-    margin-left:250px ; /* Space above the button */
+    margin-top: 50px;
+    width: 265px;
+    height: 42px;
+    margin-left:900px ; /* Space above the button */
 }
 
 .availability1-toogle-button:hover {
@@ -217,14 +218,14 @@
   .checkavailability11{
     cursor: pointer;
    
-    color: #FFFFFF;
+    color: #000000;
     position: absolute;
     width: 265px;
     height: 42px;
     left: 300px;
     margin-top: 50px;
 
-    background: #008101;
+    background: #EEEEEE;
     border-radius: 5px;
     border-color: #FFFFFF;
 

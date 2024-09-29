@@ -20,6 +20,10 @@ function Booking() {
   
   const [visibleForm, setVisibleForm] = useState(''); // Track visible form by its id
   const [userDetails, setUserDetails] = useState({ name: '', email: '', contact: '',assignedto:'' });
+  const [firstProductDates, setFirstProductDates] = useState({
+    pickupDate: '',
+    returnDate: ''
+  });
 
   const [receipt, setReceipt] = useState(null); // Store receipt details
   const [isPaymentConfirmed, setIsPaymentConfirmed] = useState(false); // Track if payment is confirmed
@@ -29,6 +33,8 @@ function Booking() {
   const [deposit, setDeposit] = useState(0); // Add a state for deposit
   const [price, setPrice] = useState(0); // Add a state for price
   const [numDays, setNumDays] = useState(0);
+
+
    // Number of days between pickup and return
   const [products, setProducts] = useState([
     {  pickupDate: '', returnDate: '', productCode: '',  quantity: '', availableQuantity: null, errorMessage: '',price:'',deposit:'',},
@@ -84,6 +90,21 @@ function Booking() {
       console.error('Error fetching product details:', error);
     }
   };
+
+  const handleFirstProductDateChange = (e, field, index) => {
+    const newProducts = [...products];
+    newProducts[index][field] = e.target.value;
+    
+    // If first product, update the dates
+    if (index === 0) {
+      setFirstProductDates({
+        ...firstProductDates,
+        [field]: e.target.value
+      });
+    }
+
+    setProducts(newProducts);
+  };
   
   // Function to handle product input changes
   const handleProductChange = (index, event) => {
@@ -96,7 +117,9 @@ function Booking() {
     }
   
     setProducts(newProducts);
+    
   };
+  
   
   const checkAvailability = async (index) => {
     const { productCode, pickupDate, returnDate, quantity } = products[index];
@@ -211,7 +234,7 @@ function Booking() {
   };
 
   const addProductForm = () => {
-    setProducts([...products, { productCode: '', pickupDate: '', returnDate: '', quantity: '', availableQuantity: null, errorMessage: '', productImageUrl: '' }]);
+    setProducts([...products, {  pickupDate: firstProductDates.pickupDate, returnDate: firstProductDates.returnDate,productCode: '', quantity: '', availableQuantity: null, errorMessage: '', productImageUrl: '' }]);
   };
 
 
@@ -466,7 +489,8 @@ function Booking() {
               type="datetime-local"
               name="pickupDate"
               value={product.pickupDate}
-              onChange={(e) => handleProductChange(index, e)}
+              onChange={e => handleFirstProductDateChange(e, 'pickupDate', index)}
+              disabled={index > 0}
               required
              />
            </div>
@@ -476,7 +500,8 @@ function Booking() {
               type="datetime-local"
               name="returnDate"
               value={product.returnDate}
-              onChange={(e) => handleProductChange(index, e)}
+              onChange={e => handleFirstProductDateChange(e, 'returnDate', index)}
+              disabled={index > 0} 
               required
              />
             </div>
@@ -553,6 +578,7 @@ function Booking() {
             )}
           </div>
           
+          
         </div>
       ))}
       <button className='checkavailability11' onClick={addProductForm}>Add Product</button>
@@ -561,7 +587,7 @@ function Booking() {
       )}
 
       <button onClick={toggleAvailability1Form} className='availability1-toogle-button'>
-          {isAvailability1FormVisible ? 'Hide Customer Details Form' : 'Show Customer Detail  Form'}
+          {isAvailability1FormVisible ? 'Create Bill' : 'Create Bill'}
       </button>
       
      
