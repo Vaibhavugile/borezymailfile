@@ -56,7 +56,8 @@ function Booking() {
       if (productDoc.exists()) {
         const productData = productDoc.data();
         const imagePath = productData.imageUrls ? productData.imageUrls[0] : null;
-        const price = productData.price || 'N/A'; // Fetch price from Firestore
+        const price = productData.price || 'N/A';
+        const priceType = productData.priceType || 'daily'; // Fetch price from Firestore
         const deposit = productData.deposit || 'N/A';
         const totalQuantity = productData.quantity || 0; // Fetch total quantity from Firestore // Fetch deposit from Firestore
   
@@ -79,7 +80,8 @@ function Booking() {
             imageUrl,  // Store the image URL
             price,     // Store the price
             deposit,
-            totalQuantity,    // Store the deposit
+            totalQuantity,
+            priceType,    // Store the deposit
           };
           return newProducts;
         });
@@ -331,17 +333,47 @@ function Booking() {
         }
   
         const productData = productDoc.data();
-        const { price, deposit } = productData;
-        const calculateTotalPrice = (price, deposit, days, quantity) => {
-          const totalPrice = price * days * quantity;
+        const { price, deposit,priceType } = productData;
+        const calculateTotalPrice = (price, deposit, priceType, quantity, pickupDate, returnDate) => {
+          const pickupDateObj = new Date(pickupDate);
+          const returnDateObj = new Date(returnDate);
+          const millisecondsPerDay = 1000 * 60 * 60 * 24;
+          const millisecondsPerHour = 1000 * 60 * 60;
+          
+          let duration=0;
+          
+          // Determine the duration based on priceType
+          if (priceType === 'hourly') {
+            duration = Math.ceil((returnDateObj - pickupDateObj) / millisecondsPerHour); // Hours difference
+          } else if (priceType === 'monthly') {
+            duration = Math.ceil((returnDateObj - pickupDateObj) / (millisecondsPerDay * 30)); // Months difference
+          } else {
+            duration = Math.ceil((returnDateObj - pickupDateObj) / millisecondsPerDay); // Days difference
+          }
+          console.log("Price Type: ", priceType);
+          console.log("Duration: ", duration);
+          console.log("Price per unit: ", price);
+          console.log("Quantity: ", quantity);
+          
+          const totalPrice = price * duration * quantity;
+          console.log("Calculated Total Price: ", totalPrice);
           return {
             totalPrice,
             deposit,
             grandTotal: totalPrice + deposit,
           };
         };
+        const totalCost = calculateTotalPrice(
+          price, 
+          deposit, 
+          priceType, 
+          product.quantity, 
+          pickupDateObj, 
+          returnDateObj
+        );
+        
   
-        const totalCost = calculateTotalPrice(price, deposit, days, product.quantity);
+        
   
         const newBookingId = await getNextBookingId(pickupDateObj, product.productCode);
   
@@ -391,8 +423,7 @@ function Booking() {
       const pickupDateObj = new Date(product.pickupDate);
       const returnDateObj = new Date(product.returnDate);
       const productRef = doc(db, 'products', product.productCode);
-      const millisecondsPerDay = 1000 * 60 * 60 * 24;
-      const days = Math.ceil((returnDateObj - pickupDateObj) / millisecondsPerDay);
+      
         const productDoc = await getDoc(productRef);
   
         if (!productDoc.exists()) {
@@ -400,20 +431,49 @@ function Booking() {
           continue; // Skip this product if not found
         }
         const productData = productDoc.data();
-
-        const { price, deposit } = productData;
-        const calculateTotalPrice = (price, deposit, days, quantity) => {
-          const totalPrice = price * days * quantity;
+        const { price, deposit, priceType } = productData;
+        const calculateTotalPrice = (price, deposit, priceType, quantity, pickupDate, returnDate) => {
+          const pickupDateObj = new Date(pickupDate);
+          const returnDateObj = new Date(returnDate);
+          const millisecondsPerDay = 1000 * 60 * 60 * 24;
+          const millisecondsPerHour = 1000 * 60 * 60;
+          
+          let duration=0;
+          
+          // Determine the duration based on priceType
+          if (priceType === 'hourly') {
+            duration = Math.ceil((returnDateObj - pickupDateObj) / millisecondsPerHour); // Hours difference
+          } else if (priceType === 'monthly') {
+            duration = Math.ceil((returnDateObj - pickupDateObj) / (millisecondsPerDay * 30)); // Months difference
+          } else {
+            duration = Math.ceil((returnDateObj - pickupDateObj) / millisecondsPerDay); // Days difference
+          }
+          console.log("Price Type: ", priceType);
+          console.log("Duration: ", duration);
+          console.log("Price per unit: ", price);
+          console.log("Quantity: ", quantity);
+          
+          const totalPrice = price * duration * quantity;
+          console.log("Calculated Total Price: ", totalPrice);
           return {
             totalPrice,
             deposit,
             grandTotal: totalPrice + deposit,
           };
         };
+        const totalCost = calculateTotalPrice(
+          price, 
+          deposit, 
+          priceType, 
+          product.quantity, 
+          pickupDateObj, 
+          returnDateObj
+        );
+        
   
   
 
-      const totalCost = calculateTotalPrice(price, deposit, days, product.quantity);
+      
   
       const newBookingId = await getNextBookingId(pickupDateObj, product.productCode);
       // Ensure receipt.products is an array
