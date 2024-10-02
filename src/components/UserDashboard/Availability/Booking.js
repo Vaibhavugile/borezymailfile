@@ -19,7 +19,7 @@ function Booking() {
   const [isAvailability1FormVisible, setIsAvailability1FormVisible] = useState(false); 
   
   const [visibleForm, setVisibleForm] = useState(''); // Track visible form by its id
-  const [userDetails, setUserDetails] = useState({ name: '', email: '', contact: '',assignedto:'' });
+  const [userDetails, setUserDetails] = useState({ name: '', email: '', contact: '',assignedto:'',stage: 'Booking' });
   const [firstProductDates, setFirstProductDates] = useState({
     pickupDate: '',
     returnDate: ''
@@ -60,7 +60,8 @@ function Booking() {
         const priceType = productData.priceType || 'daily'; // Fetch price from Firestore
         const deposit = productData.deposit || 'N/A';
         const totalQuantity = productData.quantity || 0;
-        const minimumRentalPeriod = productData.minimumRentalPeriod || 1; // Fetch total quantity from Firestore // Fetch deposit from Firestore
+        const minimumRentalPeriod = productData.minimumRentalPeriod || 1;
+        const extraRent = productData.extraRent||0;// Fetch total quantity from Firestore // Fetch deposit from Firestore
   
         let imageUrl = null;
         if (imagePath) {
@@ -83,7 +84,8 @@ function Booking() {
             deposit,
             totalQuantity,
             priceType,  
-            minimumRentalPeriod,  // Store the deposit
+            minimumRentalPeriod, 
+            extraRent, // Store the deposit
           };
           return newProducts;
         });
@@ -335,8 +337,8 @@ function Booking() {
         }
   
         const productData = productDoc.data();
-        const { price, deposit,priceType,minimumRentalPeriod } = productData;
-        const calculateTotalPrice = (price, deposit, priceType, quantity, pickupDate, returnDate, minimumRentalPeriod) => {
+        const { price, deposit,priceType,minimumRentalPeriod,extraRent } = productData;
+        const calculateTotalPrice = (price, deposit, priceType, quantity, pickupDate, returnDate, minimumRentalPeriod,extraRent) => {
           const pickupDateObj = new Date(pickupDate);
           const returnDateObj = new Date(returnDate);
           const millisecondsPerDay = 1000 * 60 * 60 * 24;
@@ -347,32 +349,45 @@ function Booking() {
           // Determine the duration based on priceType
           if (priceType === 'hourly') {
             duration = Math.ceil((returnDateObj - pickupDateObj) / millisecondsPerHour); 
-            if (minimumRentalPeriod) {
-              duration = Math.ceil(duration / minimumRentalPeriod); // Ensure duration is at least the minimum rental period
-              } // Hours difference
+             // Hours difference
           } else if (priceType === 'monthly') {
             duration = Math.ceil((returnDateObj - pickupDateObj) / (millisecondsPerDay * 30)); 
-            if (minimumRentalPeriod) {
-              duration = Math.ceil(duration / minimumRentalPeriod); // Ensure duration is at least the minimum rental period
-              } // Months difference
+            // Months difference
           } else {
             duration = Math.ceil((returnDateObj - pickupDateObj) / millisecondsPerDay);
-            if (minimumRentalPeriod) {
-            duration = Math.ceil(duration / minimumRentalPeriod); 
-            // Ensure duration is at least the minimum rental period
-            } // Days difference
+            
           }
+          
+            let fullPeriods = Math.floor(duration / minimumRentalPeriod); // Full multiples of the minimum rental period
+            let remainingDuration = duration % minimumRentalPeriod; // Extra time beyond the full periods
+
+            let totalPrice = 0;
+
+            if (fullPeriods === 0) {
+              // If full periods is 0, apply the base price for the entire duration
+              totalPrice = price * quantity;
+            } else {
+              // Calculate price for the full periods
+              totalPrice = price * fullPeriods * quantity;
+
+              // Add extra price for the remaining duration beyond full periods
+              if (remainingDuration > 0) {
+                totalPrice += extraRent * remainingDuration * quantity;
+              }
+            }
           console.log("Price Type: ", priceType);
           console.log("Duration: ", duration);
+          console.log("Full Periods: ", fullPeriods);
+          console.log("Remaining Days/Hours: ", remainingDuration);
           console.log("Price per unit: ", price);
-          console.log("Quantity: ", quantity);
-          
-          const totalPrice = price * duration * quantity;
+          console.log("Extra Price per additional duration: ", extraRent);
           console.log("Calculated Total Price: ", totalPrice);
-          return {
+        
+         return {
             totalPrice,
             deposit,
             grandTotal: totalPrice + deposit,
+            
           };
         };
         const totalCost = calculateTotalPrice(
@@ -382,7 +397,8 @@ function Booking() {
           product.quantity, 
           pickupDateObj, 
           returnDateObj,
-          minimumRentalPeriod
+          minimumRentalPeriod,
+          extraRent,
         );
         
   
@@ -743,6 +759,17 @@ function Booking() {
               required
             />
           </div>
+          <div className="form-group1">
+          <label>Stage</label>
+          <select
+            value={userDetails.stage}
+            onChange={(e) => setUserDetails({ ...userDetails, stage: e.target.value })}
+            required
+          >
+            <option value="Booking" >Booking</option>
+            <option value="Pickup">Pickup</option>
+          </select>
+        </div>
           <button type="submit" className='confirm-booking-button'>Confirm Booking</button>
           </div>
         </form>
@@ -765,11 +792,12 @@ function Booking() {
                   <strong>Deposit</strong>
                 </div>
                 <div className="receipt-column">
-                  <strong>Price per Day</strong>
+                  <strong>Rent</strong>
                 </div>
                 <div className="receipt-column">
                   <strong>Quantity</strong>
                 </div>
+                
                
                 <div className="receipt-column">
                   <strong>Total Price</strong>
@@ -792,6 +820,7 @@ function Booking() {
                   <div className="receipt-column">₹{product.deposit}</div>
                   <div className="receipt-column">₹{product.price}</div>
                   <div className="receipt-column">{product.quantity}</div>
+                  <div className="receipt-column">{product.remainingDuration}</div>
                   
                   <div className="receipt-column">₹{product.totalPrice}</div>
                   <div className="receipt-column">₹{product.grandTotal}</div>

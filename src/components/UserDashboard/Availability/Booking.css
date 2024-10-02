@@ -178,6 +178,7 @@
   
   /* Styling form inputs */
   .form-group1 input,
+  .form-group1 select,
   .form-group1 button {
     width: 100%;
    
