@@ -81,21 +81,24 @@
 }
 
 .availability1-toogle-button {
-    background-color: #1f10f3; /* Bootstrap primary color */
-    color: black; /* Text color */
+    /* Bootstrap primary color */
+    color:#FFFFFF; /* Text color */
     border: none; /* No border */
-    border-radius: 5px; /* Rounded corners */
+     /* Rounded corners */
     padding: 10px 20px; /* Padding for the button */
     cursor: pointer; /* Pointer cursor on hover */
     font-size: 16px; /* Font size */
-    margin-top: 50px;
+    margin-top: 30px;
     width: 265px;
     height: 42px;
-    margin-left:900px ; /* Space above the button */
+    margin-left:1130px ; 
+    
+    background: #164DC3;
+    border-radius: 5px;/* Space above the button */
 }
 
 .availability1-toogle-button:hover {
-    background-color: #FFFFFF; /* Darker shade on hover */
+   background: #164DC3; /* Darker shade on hover */
     transition: background-color 0.3s ease; /* Smooth transition */
 }
   
@@ -147,7 +150,9 @@
      box-sizing: border-box;
    }
   .product-image1{
+    margin-top: -70px;
     width: 300px;
+
     height: 300px;
     border-radius: 20px;
   }
@@ -195,7 +200,7 @@
   }
   
   .form-group1 button:hover {
-    background-color: #0056b3;
+    background-color: #008101;
   }
   
   .checkavailability{
@@ -213,6 +218,10 @@
     border-color: #FFFFFF;
 
     
+  }
+  .checkavailability:hover{
+    background: #008101;
+    color: #FFFFFF;
   }
 
   .checkavailability11{
@@ -282,7 +291,7 @@
     line-height: 21px;
     padding: 10px;
 
-    color: #FF0000; /* Adjust text size */
+    color: #004DA8;/* Adjust text size */
   }
 
   .confirm-booking-button{

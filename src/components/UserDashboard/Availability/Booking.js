@@ -59,7 +59,8 @@ function Booking() {
         const price = productData.price || 'N/A';
         const priceType = productData.priceType || 'daily'; // Fetch price from Firestore
         const deposit = productData.deposit || 'N/A';
-        const totalQuantity = productData.quantity || 0; // Fetch total quantity from Firestore // Fetch deposit from Firestore
+        const totalQuantity = productData.quantity || 0;
+        const minimumRentalPeriod = productData.minimumRentalPeriod || 1; // Fetch total quantity from Firestore // Fetch deposit from Firestore
   
         let imageUrl = null;
         if (imagePath) {
@@ -81,7 +82,8 @@ function Booking() {
             price,     // Store the price
             deposit,
             totalQuantity,
-            priceType,    // Store the deposit
+            priceType,  
+            minimumRentalPeriod,  // Store the deposit
           };
           return newProducts;
         });
@@ -333,8 +335,8 @@ function Booking() {
         }
   
         const productData = productDoc.data();
-        const { price, deposit,priceType } = productData;
-        const calculateTotalPrice = (price, deposit, priceType, quantity, pickupDate, returnDate) => {
+        const { price, deposit,priceType,minimumRentalPeriod } = productData;
+        const calculateTotalPrice = (price, deposit, priceType, quantity, pickupDate, returnDate, minimumRentalPeriod) => {
           const pickupDateObj = new Date(pickupDate);
           const returnDateObj = new Date(returnDate);
           const millisecondsPerDay = 1000 * 60 * 60 * 24;
@@ -344,11 +346,21 @@ function Booking() {
           
           // Determine the duration based on priceType
           if (priceType === 'hourly') {
-            duration = Math.ceil((returnDateObj - pickupDateObj) / millisecondsPerHour); // Hours difference
+            duration = Math.ceil((returnDateObj - pickupDateObj) / millisecondsPerHour); 
+            if (minimumRentalPeriod) {
+              duration = Math.ceil(duration / minimumRentalPeriod); // Ensure duration is at least the minimum rental period
+              } // Hours difference
           } else if (priceType === 'monthly') {
-            duration = Math.ceil((returnDateObj - pickupDateObj) / (millisecondsPerDay * 30)); // Months difference
+            duration = Math.ceil((returnDateObj - pickupDateObj) / (millisecondsPerDay * 30)); 
+            if (minimumRentalPeriod) {
+              duration = Math.ceil(duration / minimumRentalPeriod); // Ensure duration is at least the minimum rental period
+              } // Months difference
           } else {
-            duration = Math.ceil((returnDateObj - pickupDateObj) / millisecondsPerDay); // Days difference
+            duration = Math.ceil((returnDateObj - pickupDateObj) / millisecondsPerDay);
+            if (minimumRentalPeriod) {
+            duration = Math.ceil(duration / minimumRentalPeriod); 
+            // Ensure duration is at least the minimum rental period
+            } // Days difference
           }
           console.log("Price Type: ", priceType);
           console.log("Duration: ", duration);
@@ -369,7 +381,8 @@ function Booking() {
           priceType, 
           product.quantity, 
           pickupDateObj, 
-          returnDateObj
+          returnDateObj,
+          minimumRentalPeriod
         );
         
   
@@ -419,6 +432,31 @@ function Booking() {
 
   const handleConfirmPayment = async () => {
     try {
+      const allQuantitiesAvailable = await Promise.all(
+        products.map(async (product) => {
+          const productRef = doc(db, 'products', product.productCode);
+          const productDoc = await getDoc(productRef);
+  
+          if (!productDoc.exists()) {
+            product.errorMessage = 'Product not found.';
+            return false; // Skip this product if not found
+          }
+  
+          const productData = productDoc.data();
+          const availableQuantity = productData.availableQuantity || 0;
+  
+          // Check if the product's quantity is within the available stock
+          return parseInt(product.quantity, 10) <= availableQuantity;
+        })
+      );
+  
+      // Check if all products have sufficient stock
+      const allAvailable = allQuantitiesAvailable.every((isAvailable) => isAvailable);
+  
+      if (!allAvailable) {
+        alert('One or more products do not have enough stock. Please adjust the quantity.');
+        return; // Exit the function without proceeding with booking
+      }
       for (const product of products) {
       const pickupDateObj = new Date(product.pickupDate);
       const returnDateObj = new Date(product.returnDate);
@@ -431,8 +469,8 @@ function Booking() {
           continue; // Skip this product if not found
         }
         const productData = productDoc.data();
-        const { price, deposit, priceType } = productData;
-        const calculateTotalPrice = (price, deposit, priceType, quantity, pickupDate, returnDate) => {
+        const { price, deposit, priceType,minimumRentalPeriod } = productData;
+        const calculateTotalPrice = (price, deposit, priceType, quantity, pickupDate, returnDate,minimumRentalPeriod) => {
           const pickupDateObj = new Date(pickupDate);
           const returnDateObj = new Date(returnDate);
           const millisecondsPerDay = 1000 * 60 * 60 * 24;
@@ -442,16 +480,26 @@ function Booking() {
           
           // Determine the duration based on priceType
           if (priceType === 'hourly') {
-            duration = Math.ceil((returnDateObj - pickupDateObj) / millisecondsPerHour); // Hours difference
+            duration = Math.ceil((returnDateObj - pickupDateObj) / millisecondsPerHour); 
+            if (minimumRentalPeriod) {
+              duration = Math.ceil(duration / minimumRentalPeriod); // Ensure duration is at least the minimum rental period
+              }  // Hours difference
           } else if (priceType === 'monthly') {
-            duration = Math.ceil((returnDateObj - pickupDateObj) / (millisecondsPerDay * 30)); // Months difference
+            duration = Math.ceil((returnDateObj - pickupDateObj) / (millisecondsPerDay * 30));
+            if (minimumRentalPeriod) {
+              duration = Math.ceil(duration / minimumRentalPeriod); // Ensure duration is at least the minimum rental period
+              }  // Months difference
           } else {
-            duration = Math.ceil((returnDateObj - pickupDateObj) / millisecondsPerDay); // Days difference
+            duration = Math.ceil((returnDateObj - pickupDateObj) / millisecondsPerDay);
+            if (minimumRentalPeriod) {
+              duration = Math.ceil(duration / minimumRentalPeriod); // Ensure duration is at least the minimum rental period
+              }  // Days difference
           }
           console.log("Price Type: ", priceType);
           console.log("Duration: ", duration);
           console.log("Price per unit: ", price);
           console.log("Quantity: ", quantity);
+          console.log("minimumrentalprice",minimumRentalPeriod);
           
           const totalPrice = price * duration * quantity;
           console.log("Calculated Total Price: ", totalPrice);
@@ -467,7 +515,8 @@ function Booking() {
           priceType, 
           product.quantity, 
           pickupDateObj, 
-          returnDateObj
+          returnDateObj,
+          minimumRentalPeriod
         );
         
   
@@ -721,9 +770,7 @@ function Booking() {
                 <div className="receipt-column">
                   <strong>Quantity</strong>
                 </div>
-                <div className="receipt-column">
-                  <strong>Number of Days</strong>
-                </div>
+               
                 <div className="receipt-column">
                   <strong>Total Price</strong>
                   
@@ -745,7 +792,7 @@ function Booking() {
                   <div className="receipt-column">₹{product.deposit}</div>
                   <div className="receipt-column">₹{product.price}</div>
                   <div className="receipt-column">{product.quantity}</div>
-                  <div className="receipt-column">{product.numDays}</div>
+                  
                   <div className="receipt-column">₹{product.totalPrice}</div>
                   <div className="receipt-column">₹{product.grandTotal}</div>
                 </div>

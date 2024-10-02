@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, deleteDoc, doc, query, where } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc, query, where,setDoc,addDoc } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { useNavigate } from 'react-router-dom';
 import Papa from 'papaparse';
@@ -113,20 +113,80 @@ const ProductDashboard = () => {
     }
   };
 
-  const handleImport = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      Papa.parse(file, {
-        header: true,
-        complete: (result) => {
-          const importedProducts = result.data.map(row => ({
-            ...row,
-          }));
-          setImportedData(importedProducts);
-        },
-      });
-    }
-  };
+ // Ensure you have the Firebase config file with Firestore initialization
+
+ 
+ 
+  // Ensure this imports a valid Firestore instance
+ 
+ const handleImport = (event) => {
+   const file = event.target.files[0];
+   console.log('Selected file:', file); // Log the selected file
+ 
+   if (file) {
+     Papa.parse(file, {
+       header: true,
+       complete: async (result) => {
+         console.log('Parsed CSV Data:', result.data); // Log parsed CSV data
+ 
+         const importedProducts = result.data
+           .filter(row => row && Object.keys(row).length > 0) // Filter out empty rows
+           .map(row => {
+             const { customFields, imageUrls, ...productWithoutCustomFields } = row; // Exclude customFields
+             
+             // Safeguard for imageUrls
+             let imageUrlsArray = [];
+             if (imageUrls) {
+               try {
+                 imageUrlsArray = Array.isArray(imageUrls) 
+                   ? imageUrls 
+                   : imageUrls.split(',').map(url => url.trim()); // Split by comma and trim
+               } catch (error) {
+                 console.error('Error parsing imageUrls:', error);
+               }
+             }
+ 
+             return { 
+               ...productWithoutCustomFields, 
+               imageUrls: imageUrlsArray // Save imageUrls as an array
+             }; 
+           });
+ 
+         // Check if there are products to save
+         if (importedProducts.length === 0) {
+           console.warn('No products to import.');
+           return;
+         }
+ 
+         // Loop through each product and save to Firestore using productCode as the document ID
+         await Promise.all(importedProducts.map(async (product) => {
+           try {
+             // Ensure productCode is defined
+             if (!product.productCode) {
+               console.error('Product code is missing:', product);
+               return; // Skip saving this product
+             }
+ 
+             const productRef = doc(db, 'products', product.productCode); // Create a reference using productCode
+             await setDoc(productRef, product); // Set the document with product data
+             console.log('Product saved successfully:', product);
+           } catch (error) {
+             console.error('Error saving product to Firestore:', error, product);
+           }
+         }));
+ 
+         setImportedData(importedProducts); // Store the imported products locally if needed
+         console.log('Imported products:', importedProducts);
+       },
+       error: (error) => {
+         console.error('Error parsing CSV:', error);
+       }
+     });
+   }
+ };
+ 
+  
+  
   const handleProductCodeClick = (product) => {
     setSelectedProduct(product);
     setRightSidebarOpen(true);
