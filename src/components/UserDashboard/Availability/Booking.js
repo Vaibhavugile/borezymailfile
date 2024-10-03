@@ -33,6 +33,13 @@ function Booking() {
   const [deposit, setDeposit] = useState(0); // Add a state for deposit
   const [price, setPrice] = useState(0); // Add a state for price
   const [numDays, setNumDays] = useState(0);
+  const [loggedInBranchCode, setLoggedInBranchCode] = useState('');
+  const { userData } = useUser();
+
+
+// Example: After user login or fetching user data
+  
+
 
 
    // Number of days between pickup and return
@@ -43,6 +50,8 @@ function Booking() {
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
+
+  
  
 
   
@@ -52,50 +61,65 @@ function Booking() {
     try {
       const productRef = doc(db, 'products', productCode);
       const productDoc = await getDoc(productRef);
+     
+      setLoggedInBranchCode(userData.branchCode);
   
       if (productDoc.exists()) {
         const productData = productDoc.data();
-        const imagePath = productData.imageUrls ? productData.imageUrls[0] : null;
-        const price = productData.price || 'N/A';
-        const priceType = productData.priceType || 'daily'; // Fetch price from Firestore
-        const deposit = productData.deposit || 'N/A';
-        const totalQuantity = productData.quantity || 0;
-        const minimumRentalPeriod = productData.minimumRentalPeriod || 1;
-        const extraRent = productData.extraRent||0;// Fetch total quantity from Firestore // Fetch deposit from Firestore
   
-        let imageUrl = null;
-        if (imagePath) {
-          const storage = getStorage();
-          const imageRef = ref(storage, imagePath);
-          imageUrl = await getDownloadURL(imageRef); // Fetch image URL from Firebase Storage
-          console.log('Fetched Image URL:', imageUrl);
+        const productBranchCode = productData.branchCode || '';
+        if (productBranchCode === loggedInBranchCode) {
+          const imagePath = productData.imageUrls ? productData.imageUrls[0] : null;
+          const price = productData.price || 'N/A';
+          const priceType = productData.priceType || 'daily';
+          const deposit = productData.deposit || 'N/A';
+          const totalQuantity = productData.quantity || 0;
+          const minimumRentalPeriod = productData.minimumRentalPeriod || 1;
+          const extraRent = productData.extraRent || 0;
+  
+          let imageUrl = null;
+          if (imagePath) {
+            const storage = getStorage();
+            const imageRef = ref(storage, imagePath);
+            imageUrl = await getDownloadURL(imageRef);
+          } else {
+            imageUrl = 'path/to/placeholder-image.jpg';
+          }
+  
+          // Prevent unnecessary state updates
+          setProducts((prevProducts) => {
+            const newProducts = [...prevProducts];
+            if (
+              newProducts[index].price !== price ||
+              newProducts[index].imageUrl !== imageUrl ||
+              newProducts[index].deposit !== deposit
+            ) {
+              newProducts[index] = {
+                ...newProducts[index],
+                imageUrl,
+                price,
+                deposit,
+                totalQuantity,
+                priceType,
+                minimumRentalPeriod,
+                extraRent,
+              };
+            }
+            return newProducts;
+          });
         } else {
-          console.log('No image path found for this product');
-          imageUrl = 'path/to/placeholder-image.jpg'; // Use a placeholder if no image is found
+          console.log('Product does not belong to this branch.');
         }
-  
-        // Update the specific product's details (image URL, price, deposit)
-        setProducts((prevProducts) => {
-          const newProducts = [...prevProducts];
-          newProducts[index] = {
-            ...newProducts[index],
-            imageUrl,  // Store the image URL
-            price,     // Store the price
-            deposit,
-            totalQuantity,
-            priceType,  
-            minimumRentalPeriod, 
-            extraRent, // Store the deposit
-          };
-          return newProducts;
-        });
       } else {
-        console.log('Product not found in Firestore');
+        console.log('Product not found in Firestore.');
       }
     } catch (error) {
       console.error('Error fetching product details:', error);
     }
   };
+  
+  
+  
 
   const handleFirstProductDateChange = (e, field, index) => {
     const newProducts = [...products];
@@ -455,24 +479,40 @@ function Booking() {
   
           if (!productDoc.exists()) {
             product.errorMessage = 'Product not found.';
+            console.log(`Product not found for code: ${product.productCode}`);
             return false; // Skip this product if not found
           }
   
           const productData = productDoc.data();
-          const availableQuantity = productData.availableQuantity || 0;
+          const availableQuantity = parseInt(product.availableQuantity || 0, 10); // Ensure integer conversion
+          const requestedQuantity = parseInt(product.quantity, 10); // Ensure integer conversion for requested quantity
   
-          // Check if the product's quantity is within the available stock
-          return parseInt(product.quantity, 10) <= availableQuantity;
+          // Log the values to ensure they are correct
+          console.log(`Product Code: ${product.productCode}`);
+          console.log(`Available Quantity: ${availableQuantity}`);
+          console.log(`Requested Quantity: ${requestedQuantity}`);
+  
+          // Check if the requested quantity is within the available stock
+          if (requestedQuantity > availableQuantity) {
+            console.log(`Not enough stock for product: ${product.productCode}`);
+            product.errorMessage = 'Insufficient stock for this product.';
+            return false; // Return false if not enough stock
+          }
+  
+          return true; // Return true if sufficient stock
         })
       );
   
       // Check if all products have sufficient stock
       const allAvailable = allQuantitiesAvailable.every((isAvailable) => isAvailable);
-  
       if (!allAvailable) {
         alert('One or more products do not have enough stock. Please adjust the quantity.');
         return; // Exit the function without proceeding with booking
       }
+      
+  
+      // Check if all products have sufficient stock
+      
       for (const product of products) {
       const pickupDateObj = new Date(product.pickupDate);
       const returnDateObj = new Date(product.returnDate);
@@ -820,7 +860,7 @@ function Booking() {
                   <div className="receipt-column">₹{product.deposit}</div>
                   <div className="receipt-column">₹{product.price}</div>
                   <div className="receipt-column">{product.quantity}</div>
-                  <div className="receipt-column">{product.remainingDuration}</div>
+                 
                   
                   <div className="receipt-column">₹{product.totalPrice}</div>
                   <div className="receipt-column">₹{product.grandTotal}</div>
